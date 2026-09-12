@@ -36,7 +36,7 @@ const normalizedKebab = kebabCase(cleanName.trim());
 const pascalName = pascalCase(normalizedKebab);
 const camelName = camelCase(normalizedKebab);
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 const eventsDir = path.join(projectRoot, 'src', 'events');
 const eventFilePath = path.join(eventsDir, `${pascalName}Event.js`);
 const indexFilePath = path.join(eventsDir, 'index.js');

@@ -2,12 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const projectRoot = path.join(__dirname, "..");
-
-// CLI Flags
+// CLI Flags & Arguments
 const args = process.argv.slice(2);
 const forceOverwrite = args.includes("--force") || args.includes("-f");
 const skipInstall = args.includes("--skip-install") || args.includes("-s");
+
+const nonFlagArgs = args.filter((arg) => !arg.startsWith("-"));
+const targetDirArg = nonFlagArgs[0];
+const projectRoot = targetDirArg ? path.resolve(process.cwd(), targetDirArg) : process.cwd();
 
 console.log("\n🚀 Creating backend project structure...\n");
 

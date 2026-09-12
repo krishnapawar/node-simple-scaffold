@@ -31,7 +31,7 @@ const pluralKebab = singularKebab.endsWith("s") ? singularKebab : `${singularKeb
 const pascalName = pascalCase(singularKebab);
 const camelName = camelCase(singularKebab);
 
-const projectRoot = path.join(__dirname, "..");
+const projectRoot = process.cwd();
 const modulePath = path.join(projectRoot, "src", "modules", pluralKebab);
 const filePath = path.join(modulePath, `${singularKebab}.service.js`);
 

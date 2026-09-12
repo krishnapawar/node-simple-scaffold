@@ -32,7 +32,7 @@ const normalizedKebab = kebabCase(cleanName.trim());
 const singularKebab = normalizedKebab.replace(/s$/, '');
 const pascalName = pascalCase(singularKebab);
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 const testsDir = path.join(projectRoot, 'tests');
 const filePath = path.join(testsDir, `${singularKebab}.test.js`);
 

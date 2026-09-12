@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 const routesIndexPath = path.join(projectRoot, 'src', 'routes', 'index.js');
 const modulesDir = path.join(projectRoot, 'src', 'modules');
 

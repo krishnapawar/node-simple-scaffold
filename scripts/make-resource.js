@@ -11,7 +11,7 @@ if (!resourceName) {
     process.exit(1);
 }
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 
 // Helper casing converters
 const kebabCase = (str) => {

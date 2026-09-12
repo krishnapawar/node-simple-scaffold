@@ -8,7 +8,7 @@ function printUsage() {
     console.log("  node scripts/cli.js model:migration User");
     console.log("  npm run model:migration -- User\n");
 
-    const modelsPath = path.join(__dirname, "../src/models");
+    const modelsPath = path.join(process.cwd(), "src/models");
     if (fs.existsSync(modelsPath)) {
         const availableModels = fs.readdirSync(modelsPath)
             .filter((f) => f.endsWith(".js") && f !== "index.js")
@@ -143,8 +143,8 @@ function generateModelMigration(rawModelName) {
         process.exit(1);
     }
 
-    const modelsPath = path.join(__dirname, "../src/models");
-    const migrationsPath = path.join(__dirname, "../src/database/migrations");
+    const modelsPath = path.join(process.cwd(), "src/models");
+    const migrationsPath = path.join(process.cwd(), "src/database/migrations");
 
     // Clean model name input
     const cleanName = rawModelName.replace(/\.js$/, "").trim();

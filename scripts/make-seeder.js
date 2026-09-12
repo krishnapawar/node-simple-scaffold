@@ -32,7 +32,7 @@ const singularKebab = normalizedKebab.replace(/s$/, '');
 const pluralKebab = singularKebab.endsWith('s') ? singularKebab : `${singularKebab}s`;
 const pascalName = pascalCase(singularKebab);
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 const seedersDir = path.join(projectRoot, 'src', 'database', 'seeders');
 
 fs.mkdirSync(seedersDir, { recursive: true });

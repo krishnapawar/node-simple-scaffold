@@ -1,16 +1,40 @@
 {
-  "name": "backendapi",
+  "name": "@krishnapawar/node-simple-scaffold",
   "version": "1.0.0",
   "description": "Modular Node.js, Express & Sequelize REST API starter with CLI scaffolding and code generation for models, controllers, services, modules, middleware, migrations, relations, events, notifications, cron jobs, seeders and tests",
-  "main": "src/index.js",
+  "main": "bin/cli.js",
+  "bin": {
+    "node-simple-scaffold": "bin/cli.js",
+    "scaffold": "bin/cli.js"
+  },
+  "preferGlobal": true,
   "type": "commonjs",
   "author": "krishnapawar",
   "license": "ISC",
+  "keywords": [
+    "cli",
+    "scaffold",
+    "scaffolding",
+    "generator",
+    "express",
+    "sequelize",
+    "node",
+    "rest-api",
+    "structure",
+    "boilerplate"
+  ],
+  "files": [
+    "bin",
+    "scripts",
+    "README.md",
+    "package.json"
+  ],
   "engines": {
     "node": ">=16.0.0"
   },
   "scripts": {
-    "structure": "node scripts/cli.js structure",
-    "cli": "node scripts/cli.js"
+    "start": "node bin/cli.js",
+    "structure": "node bin/cli.js structure",
+    "cli": "node bin/cli.js"
   }
 }

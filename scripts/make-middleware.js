@@ -18,7 +18,7 @@ const camelCase = (str) => {
 };
 
 const camelName = camelCase(name.trim());
-const middlewarePath = path.join(__dirname, "..", "src", "middleware");
+const middlewarePath = path.join(process.cwd(), "src", "middleware");
 const fileName = `${camelName}.middleware.js`;
 const filePath = path.join(middlewarePath, fileName);
 

@@ -24,7 +24,7 @@ const cleanName = name.replace(/s$/, "");
 const pascalName = pascalCase(cleanName);
 const tableName = snakeCase(pascalName.endsWith("s") ? pascalName : `${pascalName}s`);
 
-const modelsPath = path.join(__dirname, "..", "src", "models");
+const modelsPath = path.join(process.cwd(), "src", "models");
 const filePath = path.join(modelsPath, `${pascalName}.js`);
 
 fs.mkdirSync(modelsPath, { recursive: true });

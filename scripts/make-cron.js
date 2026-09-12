@@ -44,7 +44,7 @@ const camelName = camelCase(normalizedKebab);
 
 const scheduleExpression = customExpression || "0 0 * * *"; // Default: Midnight every day
 
-const projectRoot = path.join(__dirname, "..");
+const projectRoot = process.cwd();
 const jobsDir = path.join(projectRoot, "src", "jobs");
 const cronFilePath = path.join(jobsDir, `${normalizedKebab}.cron.js`);
 const indexFilePath = path.join(jobsDir, "index.js");

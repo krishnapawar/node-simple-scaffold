@@ -25,7 +25,7 @@ const cleanName = name.replace(/Notification$/, "").replace(/Email$/, "");
 const pascalName = pascalCase(cleanName);
 const camelName = camelCase(cleanName);
 
-const projectRoot = path.join(__dirname, "..");
+const projectRoot = process.cwd();
 const configPath = path.join(projectRoot, "src", "config", "mail.js");
 const notificationDir = path.join(projectRoot, "src", "notifications", "email");
 const filePath = path.join(notificationDir, `${pascalName}Notification.js`);

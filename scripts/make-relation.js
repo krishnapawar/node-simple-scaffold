@@ -31,7 +31,7 @@ const relationType = validRelations.find(
   (r) => r.toLowerCase() === relationTypeInput.toLowerCase()
 ) || 'hasMany';
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 const modelsDir = path.join(projectRoot, 'src', 'models');
 const sourcePath = path.join(modelsDir, `${sourcePascal}.js`);
 

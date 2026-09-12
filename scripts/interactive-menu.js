@@ -147,7 +147,7 @@ async function runInteractiveMenu() {
       break;
     }
     case "15": {
-      target = path.join(__dirname, "../src/database/sync.js");
+      target = path.join(process.cwd(), "src/database/sync.js");
       break;
     }
     case "0":

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const path = require("path");
 const { fork } = require("child_process");
 
@@ -6,6 +7,18 @@ const extraArgs = process.argv.slice(3);
 
 const commands = {
   "structure": {
+    script: "create-structure.js",
+    description: "Generate complete backend project structure"
+  },
+  "init": {
+    script: "create-structure.js",
+    description: "Generate complete backend project structure"
+  },
+  "create": {
+    script: "create-structure.js",
+    description: "Generate complete backend project structure"
+  },
+  "new": {
     script: "create-structure.js",
     description: "Generate complete backend project structure"
   },
@@ -106,7 +119,7 @@ const commands = {
     description: "Run system health check & diagnostics"
   },
   "db:sync": {
-    target: path.join(__dirname, "../src/database/sync.js"),
+    target: path.join(process.cwd(), "src/database/sync.js"),
     description: "Sync Sequelize database tables"
   },
   "test:flow": {
@@ -116,8 +129,8 @@ const commands = {
 };
 
 function printHelp() {
-  console.log("\n🛠️  Backend Backend CLI Tool\n");
-  console.log("Usage: node scripts/cli.js [command] [options/arguments]\n");
+  console.log("\n🛠️  Node Simple Scaffold CLI Tool\n");
+  console.log("Usage: node-simple-scaffold [command|project-name] [options]\n");
   console.log("Available Commands:");
   console.log("═════════════════════════════════════════════════════════════════════════");
   for (const [name, info] of Object.entries(commands)) {
@@ -125,11 +138,12 @@ function printHelp() {
   }
   console.log("═════════════════════════════════════════════════════════════════════════\n");
   console.log("Examples:");
-  console.log("  node scripts/cli.js");
-  console.log("  node scripts/cli.js make:resource Product");
-  console.log("  node scripts/cli.js make:relation User Order hasMany");
-  console.log("  node scripts/cli.js route:list");
-  console.log("  node scripts/cli.js doctor\n");
+  console.log("  npx node-simple-scaffold");
+  console.log("  npx node-simple-scaffold my-api");
+  console.log("  npx node-simple-scaffold make:resource Product");
+  console.log("  npx node-simple-scaffold make:relation User Order hasMany");
+  console.log("  npx node-simple-scaffold route:list");
+  console.log("  npx node-simple-scaffold doctor\n");
 }
 
 if (!command) {
@@ -147,18 +161,27 @@ if (command === "--help" || command === "-h" || command === "help") {
   process.exit(0);
 }
 
-const targetCmd = commands[command];
+let targetCmd = commands[command];
+let childArgs = extraArgs;
+
 if (!targetCmd) {
-  console.error(`\n❌ Unknown command: "${command}"\n`);
-  printHelp();
-  process.exit(1);
+  // If command is not recognized but doesn't start with "-", treat command as target folder for scaffolding
+  if (!command.startsWith("-")) {
+    targetCmd = commands["structure"];
+    childArgs = [command, ...extraArgs];
+  } else {
+    console.error(`\n❌ Unknown command: "${command}"\n`);
+    printHelp();
+    process.exit(1);
+  }
 }
 
 const scriptPath = targetCmd.target || path.join(__dirname, targetCmd.script);
 
 // Execute targeted script with forwarded arguments
-const child = fork(scriptPath, extraArgs, { stdio: "inherit" });
+const child = fork(scriptPath, childArgs, { stdio: "inherit" });
 
 child.on("exit", (code) => {
   process.exit(code || 0);
 });
+

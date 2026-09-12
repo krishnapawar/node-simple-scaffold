@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = process.cwd();
 
 console.log('\n🩺   Backend System Health Doctor\n');
 console.log('═════════════════════════════════════════════════════════════════════════');
