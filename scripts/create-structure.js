@@ -210,7 +210,7 @@ const options = {
     info: {
       title: 'Backend API',
       version: '1.0.0',
-      description: 'Backend Backend API Documentation'
+      description: 'Backend REST API Documentation'
     },
     servers: [
       {
@@ -1371,6 +1371,18 @@ const commands = {
     script: "create-structure.js",
     description: "Generate complete backend project structure"
   },
+  "init": {
+    script: "create-structure.js",
+    description: "Generate complete backend project structure"
+  },
+  "create": {
+    script: "create-structure.js",
+    description: "Generate complete backend project structure"
+  },
+  "new": {
+    script: "create-structure.js",
+    description: "Generate complete backend project structure"
+  },
   "make:module": {
     script: "make-module.js",
     description: "Generate a new feature module (controller, service, repository, routes, validation)"
@@ -1403,8 +1415,72 @@ const commands = {
     script: "generate-model-migration.js",
     description: "Generate migration from an existing model"
   },
+  "make:notification": {
+    script: "make-notification.js",
+    description: "Generate a new HTML email notification service"
+  },
+  "make:email": {
+    script: "make-notification.js",
+    description: "Generate a new HTML email notification service"
+  },
+  "make:cron": {
+    script: "make-cron.js",
+    description: "Generate a new cron schedule job"
+  },
+  "make:schedule": {
+    script: "make-cron.js",
+    description: "Generate a new cron schedule job"
+  },
+  "make:job": {
+    script: "make-cron.js",
+    description: "Generate a new cron schedule job"
+  },
+  "make:seeder": {
+    script: "make-seeder.js",
+    description: "Generate a new database seeder"
+  },
+  "make:seed": {
+    script: "make-seeder.js",
+    description: "Generate a new database seeder"
+  },
+  "make:test": {
+    script: "make-test.js",
+    description: "Generate a new test suite file"
+  },
+  "make:event": {
+    script: "make-event.js",
+    description: "Generate a new event emitter & listener"
+  },
+  "make:listener": {
+    script: "make-event.js",
+    description: "Generate a new event emitter & listener"
+  },
+  "make:relation": {
+    script: "make-relation.js",
+    description: "Scaffold association between Sequelize models"
+  },
+  "make:association": {
+    script: "make-relation.js",
+    description: "Scaffold association between Sequelize models"
+  },
+  "route:list": {
+    script: "route-list.js",
+    description: "Display formatted table of all registered API endpoints"
+  },
+  "routes": {
+    script: "route-list.js",
+    description: "Display formatted table of all registered API endpoints"
+  },
+  "doctor": {
+    script: "cli-doctor.js",
+    description: "Run system health check & diagnostics"
+  },
+  "cli:doctor": {
+    script: "cli-doctor.js",
+    description: "Run system health check & diagnostics"
+  },
   "db:sync": {
-    target: path.join(__dirname, "../src/database/sync.js"),
+    target: path.join(process.cwd(), "src/database/sync.js"),
     description: "Sync Sequelize database tables"
   },
   "test:flow": {
@@ -1414,8 +1490,8 @@ const commands = {
 };
 
 function printHelp() {
-  console.log("\\n🛠️  Backend Backend CLI Tool\\n");
-  console.log("Usage: node scripts/cli.js <command> [options/arguments]\\n");
+  console.log("\\n🛠️  Node Simple Scaffold CLI Tool\\n");
+  console.log("Usage: node scripts/cli.js [command] [options/arguments]\\n");
   console.log("Available Commands:");
   console.log("═════════════════════════════════════════════════════════════════════════");
   for (const [name, info] of Object.entries(commands)) {
@@ -1423,13 +1499,24 @@ function printHelp() {
   }
   console.log("═════════════════════════════════════════════════════════════════════════\\n");
   console.log("Examples:");
-  console.log("  node scripts/cli.js structure");
   console.log("  node scripts/cli.js make:resource Product");
   console.log("  node scripts/cli.js make:module Payment");
-  console.log("  npm run cli -- make:model User\\n");
+  console.log("  node scripts/cli.js route:list");
+  console.log("  node scripts/cli.js doctor\\n");
 }
 
-if (!command || command === "--help" || command === "-h" || command === "help") {
+if (!command) {
+  const menuScript = path.join(__dirname, "interactive-menu.js");
+  if (require("fs").existsSync(menuScript)) {
+    const child = fork(menuScript, [], { stdio: "inherit" });
+    child.on("exit", (code) => process.exit(code || 0));
+    return;
+  }
+  printHelp();
+  process.exit(0);
+}
+
+if (command === "--help" || command === "-h" || command === "help") {
   printHelp();
   process.exit(0);
 }
@@ -1443,7 +1530,6 @@ if (!targetCmd) {
 
 const scriptPath = targetCmd.target || path.join(__dirname, targetCmd.script);
 
-// Execute targeted script with forwarded arguments
 const child = fork(scriptPath, extraArgs, { stdio: "inherit" });
 
 child.on("exit", (code) => {
@@ -1451,6 +1537,26 @@ child.on("exit", (code) => {
 });
 `
 );
+
+// Copy generator scripts to target project's scripts folder
+const packageScriptsDir = __dirname;
+const targetScriptsDir = path.join(projectRoot, "scripts");
+createDirectory(targetScriptsDir);
+
+if (fs.existsSync(packageScriptsDir)) {
+  const scriptFiles = fs.readdirSync(packageScriptsDir);
+  scriptFiles.forEach((file) => {
+    if (file.endsWith(".js") && file !== "create-structure.js" && file !== "cli.js") {
+      const srcFile = path.join(packageScriptsDir, file);
+      const destFile = path.join(targetScriptsDir, file);
+      if (!fs.existsSync(destFile) || forceOverwrite) {
+        fs.copyFileSync(srcFile, destFile);
+        console.log(`📄 Copied script: scripts/${file}`);
+        stats.created++;
+      }
+    }
+  });
+}
 
 createFile(
   "scripts/README.md",

@@ -12,7 +12,7 @@ const askQuestion = (query) =>
 
 async function runInteractiveMenu() {
   console.log("\n=========================================================================");
-  console.log("🛠️   Backend Backend CLI Tool - Interactive Studio");
+  console.log("🛠️   Node Simple Scaffold CLI Tool - Interactive Studio");
   console.log("=========================================================================\n");
   console.log(" Select an action to perform:\n");
   console.log("  1)  Scaffold Full Resource (Model + Migration + Module)");

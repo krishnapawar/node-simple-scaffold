@@ -1,5 +1,5 @@
 {
-  "name": "@krishnapawar/node-simple-scaffold",
+  "name": "node-simple-scaffold",
   "version": "1.0.0",
   "description": "Modular Node.js, Express & Sequelize REST API starter with CLI scaffolding and code generation for models, controllers, services, modules, middleware, migrations, relations, events, notifications, cron jobs, seeders and tests",
   "main": "bin/cli.js",
@@ -21,7 +21,10 @@
     "node",
     "rest-api",
     "structure",
-    "boilerplate"
+    "boilerplate",
+    "kp",
+    "krishnapawar",
+    "krishna"
   ],
   "files": [
     "bin",

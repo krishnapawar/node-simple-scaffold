@@ -92,7 +92,8 @@ if (fs.existsSync(nodeModulesPath) && fs.existsSync(pkgPath)) {
 // 5. Test Database Connection
 async function checkDatabase() {
   try {
-    const sequelize = require('../src/config/database');
+    const dbConfigPath = path.join(projectRoot, 'src', 'config', 'database');
+    const sequelize = require(dbConfigPath);
     await sequelize.authenticate();
     console.log('  ✅  Database Connection: Connected successfully to MySQL');
   } catch (error) {
