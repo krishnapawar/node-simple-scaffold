@@ -115,6 +115,9 @@ function formatDefaultValue(defaultValue) {
     }
 
     if (typeof defaultValue === "string") {
+        if (defaultValue === "NOW" || defaultValue.toUpperCase() === "CURRENT_TIMESTAMP") {
+            return "Sequelize.NOW";
+        }
         return `'${defaultValue}'`;
     }
 

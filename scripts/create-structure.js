@@ -1530,6 +1530,11 @@ if (!targetCmd) {
 
 const scriptPath = targetCmd.target || path.join(__dirname, targetCmd.script);
 
+if (!require("fs").existsSync(scriptPath)) {
+  console.error(\`\\n❌ Target script not found: "\${scriptPath}"\\n\`);
+  process.exit(1);
+}
+
 const child = fork(scriptPath, extraArgs, { stdio: "inherit" });
 
 child.on("exit", (code) => {

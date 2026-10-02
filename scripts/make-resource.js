@@ -293,6 +293,7 @@ Object.entries(moduleTemplates).forEach(([fileName, content]) => {
 });
 
 // 2. Create Model File
+fs.mkdirSync(path.dirname(modelPath), { recursive: true });
 if (!fs.existsSync(modelPath)) {
     const modelTemplate = `const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');

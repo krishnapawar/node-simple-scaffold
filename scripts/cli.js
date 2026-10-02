@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const fs = require("fs");
 const path = require("path");
 const { fork } = require("child_process");
 
@@ -149,11 +150,15 @@ function printHelp() {
 if (!command) {
   // Launch interactive menu studio
   const menuScript = path.join(__dirname, "interactive-menu.js");
-  const child = fork(menuScript, [], { stdio: "inherit" });
-  child.on("exit", (code) => {
-    process.exit(code || 0);
-  });
-  return;
+  if (fs.existsSync(menuScript)) {
+    const child = fork(menuScript, [], { stdio: "inherit" });
+    child.on("exit", (code) => {
+      process.exit(code || 0);
+    });
+    return;
+  }
+  printHelp();
+  process.exit(0);
 }
 
 if (command === "--help" || command === "-h" || command === "help") {
@@ -178,10 +183,17 @@ if (!targetCmd) {
 
 const scriptPath = targetCmd.target || path.join(__dirname, targetCmd.script);
 
+if (!fs.existsSync(scriptPath)) {
+  console.error(`\n❌ Target script not found: "${scriptPath}"`);
+  console.error(`Please ensure you are running this command inside a scaffolded project directory.\n`);
+  process.exit(1);
+}
+
 // Execute targeted script with forwarded arguments
 const child = fork(scriptPath, childArgs, { stdio: "inherit" });
 
 child.on("exit", (code) => {
   process.exit(code || 0);
 });
+
 

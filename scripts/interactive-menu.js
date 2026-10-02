@@ -15,24 +15,25 @@ async function runInteractiveMenu() {
   console.log("🛠️   Node Simple Scaffold CLI Tool - Interactive Studio");
   console.log("=========================================================================\n");
   console.log(" Select an action to perform:\n");
-  console.log("  1)  Scaffold Full Resource (Model + Migration + Module)");
-  console.log("  2)  Scaffold Layered Module (Controller, Service, Repo, Routes)");
-  console.log("  3)  Generate Model");
-  console.log("  4)  Generate Controller");
-  console.log("  5)  Generate Service");
-  console.log("  6)  Generate Middleware");
-  console.log("  7)  Generate Cron Schedule Job");
-  console.log("  8)  Generate HTML Email Notification");
-  console.log("  9)  Generate Database Seeder");
-  console.log("  10) Generate Test Suite");
-  console.log("  11) Generate Event Handler & Listener");
-  console.log("  12) Scaffold Model Association / Relation");
-  console.log("  13) View All Registered API Routes");
-  console.log("  14) Run System Diagnostics & Health Check (Doctor)");
-  console.log("  15) Sync Database Tables");
+  console.log("  1)  Create Project Structure");
+  console.log("  2)  Scaffold Full Resource (Model + Migration + Module)");
+  console.log("  3)  Scaffold Layered Module (Controller, Service, Repo, Routes)");
+  console.log("  4)  Generate Model");
+  console.log("  5)  Generate Controller");
+  console.log("  6)  Generate Service");
+  console.log("  7)  Generate Middleware");
+  console.log("  8)  Generate Cron Schedule Job");
+  console.log("  9)  Generate HTML Email Notification");
+  console.log("  10) Generate Database Seeder");
+  console.log("  11) Generate Test Suite");
+  console.log("  12) Generate Event Handler & Listener");
+  console.log("  13) Scaffold Model Association / Relation");
+  console.log("  14) View All Registered API Routes");
+  console.log("  15) Run System Diagnostics & Health Check (Doctor)");
+  console.log("  16) Sync Database Tables");
   console.log("  0)  Exit\n");
 
-  const choice = (await askQuestion("👉 Enter option (0-15): ")).trim();
+  const choice = (await askQuestion("👉 Enter option (0-16): ")).trim();
 
   let script = "";
   let args = [];
@@ -40,6 +41,10 @@ async function runInteractiveMenu() {
 
   switch (choice) {
     case "1": {
+      script = "create-structure.js";
+      break;
+    }
+    case "2": {
       const name = await askQuestion("Enter Resource Name (e.g. Product): ");
       if (name) {
         script = "make-resource.js";
@@ -47,7 +52,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "2": {
+    case "3": {
       const name = await askQuestion("Enter Module Name (e.g. Payment): ");
       if (name) {
         script = "make-module.js";
@@ -55,7 +60,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "3": {
+    case "4": {
       const name = await askQuestion("Enter Model Name (e.g. Category): ");
       if (name) {
         script = "make-model.js";
@@ -63,7 +68,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "4": {
+    case "5": {
       const name = await askQuestion("Enter Controller Name: ");
       if (name) {
         script = "make-controller.js";
@@ -71,7 +76,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "5": {
+    case "6": {
       const name = await askQuestion("Enter Service Name: ");
       if (name) {
         script = "make-service.js";
@@ -79,7 +84,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "6": {
+    case "7": {
       const name = await askQuestion("Enter Middleware Name: ");
       if (name) {
         script = "make-middleware.js";
@@ -87,7 +92,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "7": {
+    case "8": {
       const name = await askQuestion("Enter Cron Job Name (e.g. CleanupLogs): ");
       const expression = await askQuestion("Enter Cron Expression [Default: 0 0 * * *]: ");
       if (name) {
@@ -96,7 +101,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "8": {
+    case "9": {
       const name = await askQuestion("Enter Email Notification Name: ");
       if (name) {
         script = "make-notification.js";
@@ -104,7 +109,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "9": {
+    case "10": {
       const name = await askQuestion("Enter Seeder Name: ");
       if (name) {
         script = "make-seeder.js";
@@ -112,7 +117,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "10": {
+    case "11": {
       const name = await askQuestion("Enter Test Suite Name: ");
       if (name) {
         script = "make-test.js";
@@ -120,7 +125,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "11": {
+    case "12": {
       const name = await askQuestion("Enter Event Name (e.g. UserRegistered): ");
       if (name) {
         script = "make-event.js";
@@ -128,7 +133,7 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "12": {
+    case "13": {
       const source = await askQuestion("Enter Source Model (e.g. User): ");
       const targetModel = await askQuestion("Enter Target Model (e.g. Order): ");
       const relation = await askQuestion("Enter Relation Type (hasMany, belongsTo, hasOne, belongsToMany) [Default: hasMany]: ");
@@ -138,15 +143,15 @@ async function runInteractiveMenu() {
       }
       break;
     }
-    case "13": {
+    case "14": {
       script = "route-list.js";
       break;
     }
-    case "14": {
+    case "15": {
       script = "cli-doctor.js";
       break;
     }
-    case "15": {
+    case "16": {
       target = path.join(process.cwd(), "src/database/sync.js");
       break;
     }

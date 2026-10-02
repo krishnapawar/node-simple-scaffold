@@ -42,11 +42,18 @@ if (!fs.existsSync(sourcePath)) {
 
 let sourceContent = fs.readFileSync(sourcePath, 'utf8');
 
+const snakeCase = (str) =>
+  str
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .replace(/[\s-]+/g, '_')
+    .toLowerCase();
+
 // Determine foreignKey and alias
 const foreignKey = `${camelCase(relationType === 'belongsTo' ? targetPascal : sourcePascal)}_id`;
-const alias = relationType === 'hasMany' ? `${camelCase(targetPascal)}s` : camelCase(targetPascal);
+const alias = relationType === 'hasMany' || relationType === 'belongsToMany' ? `${camelCase(targetPascal)}s` : camelCase(targetPascal);
+const through = relationType === 'belongsToMany' ? `, through: '${snakeCase(sourcePascal)}_${snakeCase(targetPascal)}s'` : '';
 
-const associationSnippet = `${sourcePascal}.${relationType}(models.${targetPascal}, { foreignKey: '${foreignKey}', as: '${alias}' });`;
+const associationSnippet = `${sourcePascal}.${relationType}(models.${targetPascal}, { foreignKey: '${foreignKey}', as: '${alias}'${through} });`;
 
 if (sourceContent.includes(`models.${targetPascal}`)) {
   console.log(`⚠️ Association already exists in src/models/${sourcePascal}.js`);

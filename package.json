@@ -1,6 +1,6 @@
 {
   "name": "node-simple-scaffold",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Modular Node.js, Express & Sequelize REST API starter with CLI scaffolding and code generation for models, controllers, services, modules, middleware, migrations, relations, events, notifications, cron jobs, seeders and tests",
   "main": "bin/cli.js",
   "bin": {
@@ -11,6 +11,14 @@
   "type": "commonjs",
   "author": "krishnapawar",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krishnapawar/node-simple-scaffold.git"
+  },
+  "bugs": {
+    "url": "https://github.com/krishnapawar/node-simple-scaffold/issues"
+  },
+  "homepage": "https://github.com/krishnapawar/node-simple-scaffold#readme",
   "keywords": [
     "cli",
     "scaffold",
