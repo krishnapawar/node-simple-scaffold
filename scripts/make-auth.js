@@ -1,17 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const { detectDatabaseType } = require('./db-helper');
 
 const args = process.argv.slice(2);
 const forceOverwrite = args.includes('--force') || args.includes('-f');
 
 const projectRoot = process.cwd();
+const isMongo = detectDatabaseType(projectRoot) === 'mongodb';
+
 const authDir = path.join(projectRoot, 'src', 'modules', 'auth');
 const modelsDir = path.join(projectRoot, 'src', 'models');
 const middlewareDir = path.join(projectRoot, 'src', 'middleware');
 const routesIndexPath = path.join(projectRoot, 'src', 'routes', 'index.js');
 const uploadsDir = path.join(projectRoot, 'uploads');
 
-console.log('\n🔐 Scaffolding Authentication Module...\n');
+console.log(`\n🔐 Scaffolding Authentication Module [${isMongo ? 'MongoDB' : 'MySQL'}]...\n`);
 
 let stats = { created: 0, skipped: 0, overwritten: 0 };
 
@@ -136,7 +139,7 @@ const updateProfile = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
   try {
     const result = await authService.changePassword(req.user.id, req.body);
-    return ApiResponse.success(res, result, 'Password updated successfully');
+    return ApiResponse.success(res, result, 'Password changed successfully');
   } catch (error) {
     next(error);
   }
@@ -145,7 +148,7 @@ const changePassword = async (req, res, next) => {
 const updateAvatar = async (req, res, next) => {
   try {
     if (!req.file) {
-      throw new ApiError(400, 'Avatar image file is required');
+      throw new ApiError(400, 'Please upload an image file');
     }
     const user = await authService.updateAvatar(req.user.id, req.file.filename);
     return ApiResponse.success(res, user, 'Avatar updated successfully');
@@ -167,27 +170,27 @@ module.exports = {
 
 createFile(
   'src/modules/auth/auth.service.js',
-  `const fs = require('fs');
+  `const jwt = require('jsonwebtoken');
 const path = require('path');
-const jwt = require('jsonwebtoken');
+const fs = require('fs');
 const authRepository = require('./auth.repository');
-const { hashPassword, comparePassword } = require('../../utils/helpers');
-const env = require('../../config/env');
 const ApiError = require('../../utils/ApiError');
+const env = require('../../config/env');
+const { hashPassword, comparePassword } = require('../../utils/helpers');
 
-const register = async (data) => {
-  const existingUser = await authRepository.findByEmail(data.email);
+const register = async (userData) => {
+  const existingUser = await authRepository.findByEmail(userData.email);
   if (existingUser) {
-    throw new ApiError(409, 'Email already exists');
+    throw new ApiError(409, 'Email is already registered');
   }
 
-  const password = await hashPassword(data.password);
+  const hashedPassword = await hashPassword(userData.password);
   const user = await authRepository.create({
-    ...data,
-    password
+    ...userData,
+    password: hashedPassword
   });
 
-  const userJson = user.toJSON();
+  const userJson = user.toJSON ? user.toJSON() : { ...user };
   delete userJson.password;
   return userJson;
 };
@@ -203,11 +206,11 @@ const login = async ({ email, password }) => {
     throw new ApiError(401, 'Invalid email or password');
   }
 
-  const token = jwt.sign({ id: user.id }, env.jwt.secret, {
+  const token = jwt.sign({ id: user.id || user._id }, env.jwt.secret, {
     expiresIn: env.jwt.expiresIn
   });
 
-  const userJson = user.toJSON();
+  const userJson = user.toJSON ? user.toJSON() : { ...user };
   delete userJson.password;
 
   return { user: userJson, token };
@@ -218,7 +221,7 @@ const getProfile = async (userId) => {
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
-  const userJson = user.toJSON();
+  const userJson = user.toJSON ? user.toJSON() : { ...user };
   delete userJson.password;
   return userJson;
 };
@@ -229,8 +232,14 @@ const updateProfile = async (userId, data) => {
     throw new ApiError(404, 'User not found');
   }
 
-  await user.update(data);
-  const updatedUser = user.toJSON();
+  if (typeof user.update === 'function') {
+    await user.update(data);
+  } else {
+    Object.assign(user, data);
+    await user.save();
+  }
+
+  const updatedUser = user.toJSON ? user.toJSON() : { ...user };
   delete updatedUser.password;
   return updatedUser;
 };
@@ -247,7 +256,12 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
   }
 
   const hashedPassword = await hashPassword(newPassword);
-  await user.update({ password: hashedPassword });
+  if (typeof user.update === 'function') {
+    await user.update({ password: hashedPassword });
+  } else {
+    user.password = hashedPassword;
+    await user.save();
+  }
   return { message: 'Password updated successfully' };
 };
 
@@ -265,9 +279,14 @@ const updateAvatar = async (userId, filename) => {
   }
 
   const avatarUrl = \`uploads/\${filename}\`;
-  await user.update({ avatar: avatarUrl });
+  if (typeof user.update === 'function') {
+    await user.update({ avatar: avatarUrl });
+  } else {
+    user.avatar = avatarUrl;
+    await user.save();
+  }
 
-  const userJson = user.toJSON();
+  const userJson = user.toJSON ? user.toJSON() : { ...user };
   delete userJson.password;
   return userJson;
 };
@@ -283,9 +302,34 @@ module.exports = {
 `
 );
 
-createFile(
-  'src/modules/auth/auth.repository.js',
-  `const { User } = require('../../models');
+if (isMongo) {
+  createFile(
+    'src/modules/auth/auth.repository.js',
+    `const { User } = require('../../models');
+
+const findByEmail = async (email) => {
+  return User.findOne({ email });
+};
+
+const findById = async (id) => {
+  return User.findById(id);
+};
+
+const create = async (data) => {
+  return User.create(data);
+};
+
+module.exports = {
+  findByEmail,
+  findById,
+  create
+};
+`
+  );
+} else {
+  createFile(
+    'src/modules/auth/auth.repository.js',
+    `const { User } = require('../../models');
 
 const findByEmail = async (email) => {
   return User.findOne({ where: { email } });
@@ -305,7 +349,8 @@ module.exports = {
   create
 };
 `
-);
+  );
+}
 
 createFile(
   'src/modules/auth/auth.routes.js',
@@ -338,9 +383,75 @@ module.exports = router;
 // 3. Ensure User model exists
 const userModelPath = path.join(modelsDir, 'User.js');
 if (!fs.existsSync(userModelPath) || forceOverwrite) {
-  createFile(
-    'src/models/User.js',
-    `const { DataTypes } = require('sequelize');
+  if (isMongo) {
+    createFile(
+      'src/models/User.js',
+      `const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true
+    },
+    password: {
+      type: String,
+      required: true
+    },
+    avatar: {
+      type: String,
+      default: null
+    },
+    phone: {
+      type: String,
+      default: null
+    },
+    bio: {
+      type: String,
+      default: null
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'user'],
+      default: 'user'
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active'
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+userSchema.set('toJSON', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    ret.id = ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
+`
+    );
+  } else {
+    createFile(
+      'src/models/User.js',
+      `const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const User = sequelize.define(
@@ -397,7 +508,8 @@ const User = sequelize.define(
 
 module.exports = User;
 `
-  );
+    );
+  }
 }
 
 // 4. Ensure auth.middleware.js exists
@@ -431,7 +543,9 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, env.jwt.secret);
-    const user = await User.findByPk(decoded.id);
+    const user = User.findByPk
+      ? await User.findByPk(decoded.id)
+      : await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -498,7 +612,10 @@ module.exports = { uploadAvatar };
 // 6. Ensure auth dependencies are installed
 const nodeModulesPath = path.join(projectRoot, 'node_modules');
 if (fs.existsSync(nodeModulesPath)) {
-  const requiredPkgs = ['jsonwebtoken', 'bcryptjs', 'multer'];
+  const requiredPkgs = isMongo
+    ? ['jsonwebtoken', 'bcryptjs', 'multer', 'mongoose']
+    : ['jsonwebtoken', 'bcryptjs', 'multer'];
+
   const missingPkgs = requiredPkgs.filter(
     (pkg) => !fs.existsSync(path.join(nodeModulesPath, pkg))
   );
@@ -531,25 +648,24 @@ if (fs.existsSync(routesIndexPath)) {
       const routerDecl = 'const router =';
       if (indexContent.includes(routerDecl)) {
         indexContent = indexContent.replace(routerDecl, `${routeRequire}\n\n${routerDecl}`);
-      } else {
-        indexContent = `${routeRequire}\n${indexContent}`;
+        modified = true;
       }
     }
     const moduleExports = 'module.exports = router;';
     if (indexContent.includes(moduleExports)) {
       indexContent = indexContent.replace(moduleExports, `${routeUse}\n\n${moduleExports}`);
-    } else {
-      indexContent += `\n${routeUse}\n`;
+      modified = true;
     }
-    fs.writeFileSync(routesIndexPath, indexContent, 'utf8');
-    console.log('🔗 Auto-registered auth routes in src/routes/index.js -> /api/auth');
-  } else {
-    console.log('ℹ️ Auth routes already registered in src/routes/index.js');
+
+    if (modified) {
+      fs.writeFileSync(routesIndexPath, indexContent, 'utf8');
+      console.log('🔗 Auto-registered auth routes in src/routes/index.js -> /api/auth');
+    }
   }
 }
 
-console.log('\n═════════════════════════════════════════════════════════════════════════');
-console.log('✅ Authentication module generated successfully!');
+console.log('═════════════════════════════════════════════════════════════════════════');
+console.log(`✅ Authentication module generated successfully! [${isMongo ? 'MongoDB' : 'MySQL'}]`);
 console.log('═════════════════════════════════════════════════════════════════════════');
 console.log(`📊 Summary: ${stats.created} created | ${stats.overwritten} overwritten | ${stats.skipped} skipped\n`);
 console.log('Available Auth Endpoints:');

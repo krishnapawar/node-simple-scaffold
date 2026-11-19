@@ -1,5 +1,12 @@
 const fs = require("fs");
 const path = require("path");
+const { detectDatabaseType } = require("./db-helper");
+
+if (detectDatabaseType(process.cwd()) === "mongodb") {
+    console.log("\nℹ️  Note: Model migrations are for SQL databases (MySQL / Sequelize).");
+    console.log("MongoDB is schema-less and does not require migration files.\n");
+    process.exit(0);
+}
 
 // Help / usage message
 function printUsage() {

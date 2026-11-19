@@ -9,19 +9,19 @@ const extraArgs = process.argv.slice(3);
 const commands = {
   "structure": {
     script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
+    description: "Generate lightweight backend project structure (MySQL / MongoDB)"
   },
   "init": {
     script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
+    description: "Generate lightweight backend project structure (MySQL / MongoDB)"
   },
   "create": {
     script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
+    description: "Generate lightweight backend project structure (MySQL / MongoDB)"
   },
   "new": {
     script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
+    description: "Generate lightweight backend project structure (MySQL / MongoDB)"
   },
   "make:auth": {
     script: "make-auth.js",
@@ -41,7 +41,7 @@ const commands = {
   },
   "make:model": {
     script: "make-model.js",
-    description: "Generate a new Sequelize model"
+    description: "Generate a new Sequelize / Mongoose model"
   },
   "make:controller": {
     script: "make-controller.js",
@@ -165,8 +165,11 @@ function printHelp() {
   console.log("Examples:");
   console.log("  npx node-simple-scaffold");
   console.log("  npx node-simple-scaffold my-api");
+  console.log("  npx node-simple-scaffold my-api --db=mongodb");
+  console.log("  npx node-simple-scaffold my-api --db=mysql");
   console.log("  npx node-simple-scaffold make:resource Product");
-  console.log("  npx node-simple-scaffold make:relation User Order hasMany");
+  console.log("  npx node-simple-scaffold make:model Product");
+  console.log("  npx node-simple-scaffold make:auth");
   console.log("  npx node-simple-scaffold route:list");
   console.log("  npx node-simple-scaffold doctor\n");
 }
@@ -202,6 +205,14 @@ if (!targetCmd) {
     console.error(`\n❌ Unknown command: "${command}"\n`);
     printHelp();
     process.exit(1);
+  }
+}
+
+if (command === "db:sync") {
+  const { detectDatabaseType } = require("./db-helper");
+  if (detectDatabaseType(process.cwd()) === "mongodb") {
+    console.log("\nℹ️ Table sync is specific to SQL/Sequelize databases. MongoDB schemas are managed dynamically by Mongoose.\n");
+    process.exit(0);
   }
 }
 

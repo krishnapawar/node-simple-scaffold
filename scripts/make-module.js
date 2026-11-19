@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { detectDatabaseType } = require('./db-helper');
 
 const moduleName = process.argv[2];
 
@@ -12,6 +13,7 @@ if (!moduleName) {
 }
 
 const projectRoot = process.cwd();
+const isMongo = detectDatabaseType(projectRoot) === 'mongodb';
 
 // Helper casing converters
 const kebabCase = (str) => {
@@ -40,33 +42,71 @@ const camelName = camelCase(singularKebab);
 
 const modulePath = path.join(projectRoot, 'src', 'modules', pluralKebab);
 
-console.log(`\n🚀 Generating module stack for: ${pascalName} (${pluralKebab})\n`);
+console.log(`\n🚀 Generating module stack for: ${pascalName} (${pluralKebab}) [${isMongo ? 'MongoDB' : 'MySQL'}]\n`);
 
 fs.mkdirSync(modulePath, { recursive: true });
 
-// Boilerplate generators
-const templates = {
-    [`${singularKebab}.validation.js`]: `const Joi = require('joi');
+const repositoryTemplate = isMongo
+    ? `const { ${pascalName} } = require('../../models');
 
-const create${pascalName}Schema = Joi.object({
-    name: Joi.string().min(2).max(255).required(),
-    description: Joi.string().allow('', null),
-    status: Joi.string().valid('active', 'inactive').default('active')
-});
+const findAndCountAll = async ({ search, status = 'active', limit = 10, offset = 0, sort_by = 'newest' }) => {
+    const query = {};
 
-const update${pascalName}Schema = Joi.object({
-    name: Joi.string().min(2).max(255),
-    description: Joi.string().allow('', null),
-    status: Joi.string().valid('active', 'inactive')
-});
+    if (status && status !== 'all') {
+        query.status = status;
+    }
+
+    if (search) {
+        query.name = { $regex: search, $options: 'i' };
+    }
+
+    const sort = sort_by === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
+
+    const [count, rows] = await Promise.all([
+        ${pascalName} ? ${pascalName}.countDocuments(query) : 0,
+        ${pascalName} ? ${pascalName}.find(query).sort(sort).skip(Number(offset)).limit(Number(limit)) : []
+    ]);
+
+    return { count, rows };
+};
+
+const findById = async (id) => {
+    if (${pascalName}) {
+        return ${pascalName}.findById(id);
+    }
+    return null;
+};
+
+const create = async (data) => {
+    if (${pascalName}) {
+        return ${pascalName}.create(data);
+    }
+    return data;
+};
+
+const update = async (id, data) => {
+    if (${pascalName}) {
+        return ${pascalName}.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+    }
+    return data;
+};
+
+const deleteById = async (id) => {
+    if (${pascalName}) {
+        return ${pascalName}.findByIdAndDelete(id);
+    }
+    return true;
+};
 
 module.exports = {
-    create${pascalName}Schema,
-    update${pascalName}Schema
+    findAndCountAll,
+    findById,
+    create,
+    update,
+    deleteById
 };
-`,
-
-    [`${singularKebab}.repository.js`]: `const { Op } = require('sequelize');
+`
+    : `const { Op } = require('sequelize');
 const db = require('../../models');
 const ${pascalName} = db.${pascalName};
 
@@ -135,7 +175,31 @@ module.exports = {
     update,
     deleteById
 };
+`;
+
+// Boilerplate generators
+const templates = {
+    [`${singularKebab}.validation.js`]: `const Joi = require('joi');
+
+const create${pascalName}Schema = Joi.object({
+    name: Joi.string().min(2).max(255).required(),
+    description: Joi.string().allow('', null),
+    status: Joi.string().valid('active', 'inactive').default('active')
+});
+
+const update${pascalName}Schema = Joi.object({
+    name: Joi.string().min(2).max(255),
+    description: Joi.string().allow('', null),
+    status: Joi.string().valid('active', 'inactive')
+});
+
+module.exports = {
+    create${pascalName}Schema,
+    update${pascalName}Schema
+};
 `,
+
+    [`${singularKebab}.repository.js`]: repositoryTemplate,
 
     [`${singularKebab}.service.js`]: `const ${camelName}Repository = require('./${singularKebab}.repository');
 const ApiError = require('../../utils/ApiError');
@@ -269,14 +333,12 @@ module.exports = router;
 
 Object.entries(templates).forEach(([fileName, content]) => {
     const filePath = path.join(modulePath, fileName);
-
     if (fs.existsSync(filePath)) {
         console.log(`⚠️ Already exists: ${fileName}`);
         return;
     }
-
     fs.writeFileSync(filePath, content, 'utf8');
-    console.log(`📄 Created module file: ${fileName}`);
+    console.log(`📄 Created: ${fileName}`);
 });
 
 // Auto-register route in src/routes/index.js
@@ -302,4 +364,4 @@ if (fs.existsSync(indexRoutesPath)) {
     }
 }
 
-console.log(`\n✅ Module '${pluralKebab}' generated successfully!\n`);
+console.log(`\n✅ Module '${pascalName}' generated successfully!\n`);

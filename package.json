@@ -1,7 +1,7 @@
 {
   "name": "node-simple-scaffold",
   "version": "1.0.5",
-  "description": "Modular Node.js, Express & Sequelize REST API starter with CLI scaffolding and code generation for models, controllers, services, modules, middleware, migrations, relations, events, notifications, cron jobs, seeders and tests",
+  "description": "Modular Node.js, Express, Sequelize (MySQL) & Mongoose (MongoDB) REST API starter with CLI scaffolding and code generation for models, controllers, services, modules, middleware, migrations, relations, events, notifications, cron jobs, seeders and tests",
   "main": "bin/cli.js",
   "bin": {
     "node-simple-scaffold": "bin/cli.js",
@@ -29,6 +29,9 @@
     "generator",
     "express",
     "sequelize",
+    "mysql",
+    "mongodb",
+    "mongoose",
     "node",
     "rest-api",
     "structure",

@@ -1,8 +1,8 @@
 # 🚀 node-simple-scaffold
 
-> **Modular Node.js, Express & Sequelize REST API Scaffolding & CLI Code Generator**
+> **Modular Node.js, Express, Sequelize (MySQL) & Mongoose (MongoDB) REST API Scaffolding & CLI Code Generator**
 
-`node-simple-scaffold` is a powerful CLI tool and generator that scaffolds production-ready Express & Sequelize backend REST API project structures and component stacks (modules, controllers, services, models, migrations, seeders, cron jobs, notifications, relations, and tests) in seconds.
+`node-simple-scaffold` is a powerful CLI tool and generator that scaffolds production-ready backend REST API project structures with your choice of **SQL (MySQL / Sequelize)** or **NoSQL (MongoDB / Mongoose)**, and component stacks (modules, controllers, services, models, migrations, seeders, cron jobs, notifications, and tests) in seconds.
 
 ---
 
@@ -11,11 +11,14 @@
 Generate a new backend project structure instantly using `npx`:
 
 ```bash
-# Create project structure in a new directory:
+# Create project structure (prompts for MySQL or MongoDB):
 npx node-simple-scaffold my-api
 
-# Or create project structure in the current working directory:
-cd my-api
+# Create with specific database:
+npx node-simple-scaffold my-api --db=mysql     # MySQL + Sequelize
+npx node-simple-scaffold my-api --db=mongodb   # MongoDB + Mongoose
+
+# Or run interactive studio menu:
 npx node-simple-scaffold
 ```
 

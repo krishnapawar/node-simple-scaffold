@@ -33,6 +33,8 @@ const pluralKebab = singularKebab.endsWith('s') ? singularKebab : `${singularKeb
 const pascalName = pascalCase(singularKebab);
 
 const projectRoot = process.cwd();
+const { detectDatabaseType } = require('./db-helper');
+const isMongo = detectDatabaseType(projectRoot) === 'mongodb';
 const seedersDir = path.join(projectRoot, 'src', 'database', 'seeders');
 
 fs.mkdirSync(seedersDir, { recursive: true });
@@ -50,7 +52,35 @@ const timestamp = [
 const fileName = `${timestamp}-seed-${pluralKebab}.js`;
 const filePath = path.join(seedersDir, fileName);
 
-const content = `'use strict';
+const content = isMongo
+  ? `const connectDB = require('../../config/database');
+const { ${pascalName} } = require('../../models');
+
+const seed${pascalName} = async () => {
+  await connectDB();
+  const samples = [
+    { name: 'Sample ${pascalName} 1', status: 'active' },
+    { name: 'Sample ${pascalName} 2', status: 'active' }
+  ];
+
+  if (${pascalName}) {
+    await ${pascalName}.insertMany(samples);
+    console.log('✅ Seeded ${pascalName} collection successfully');
+  }
+};
+
+module.exports = seed${pascalName};
+
+if (require.main === module) {
+  seed${pascalName}()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
+`
+  : `'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -82,4 +112,4 @@ module.exports = {
 `;
 
 fs.writeFileSync(filePath, content, 'utf8');
-console.log(`\n✅ Database seeder created: src/database/seeders/${fileName}\n`);
+console.log(`\n✅ Database seeder created: src/database/seeders/${fileName} [${isMongo ? 'Mongoose' : 'Sequelize'}]\n`);

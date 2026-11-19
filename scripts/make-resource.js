@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { detectDatabaseType } = require('./db-helper');
 
 const resourceName = process.argv[2];
 
@@ -12,6 +13,7 @@ if (!resourceName) {
 }
 
 const projectRoot = process.cwd();
+const isMongo = detectDatabaseType(projectRoot) === 'mongodb';
 
 // Helper casing converters
 const kebabCase = (str) => {
@@ -55,33 +57,60 @@ const pad = (v) => String(v).padStart(2, '0');
 const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 const migrationFile = `${timestamp}-create-${pluralKebab}.js`;
 
-console.log(`\n🚀 Generating complete resource stack for: ${pascalName}\n`);
+console.log(`\n🚀 Generating complete resource stack for: ${pascalName} [${isMongo ? 'MongoDB' : 'MySQL'}]\n`);
 
 // 1. Create Module Files
 fs.mkdirSync(modulePath, { recursive: true });
 
-const moduleTemplates = {
-    [`${singularKebab}.validation.js`]: `const Joi = require('joi');
+const repositoryTemplate = isMongo
+    ? `const { ${pascalName} } = require('../../models');
 
-const create${pascalName}Schema = Joi.object({
-    name: Joi.string().min(2).max(255).required(),
-    description: Joi.string().allow('', null),
-    status: Joi.string().valid('active', 'inactive').default('active')
-});
+const findAndCountAll = async ({ search, status = 'active', limit = 10, offset = 0, sort_by = 'newest' }) => {
+    const query = {};
 
-const update${pascalName}Schema = Joi.object({
-    name: Joi.string().min(2).max(255),
-    description: Joi.string().allow('', null),
-    status: Joi.string().valid('active', 'inactive')
-});
+    if (status && status !== 'all') {
+        query.status = status;
+    }
+
+    if (search) {
+        query.name = { $regex: search, $options: 'i' };
+    }
+
+    const sort = sort_by === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
+
+    const [count, rows] = await Promise.all([
+        ${pascalName}.countDocuments(query),
+        ${pascalName}.find(query).sort(sort).skip(Number(offset)).limit(Number(limit))
+    ]);
+
+    return { count, rows };
+};
+
+const findById = async (id) => {
+    return ${pascalName}.findById(id);
+};
+
+const create = async (data) => {
+    return ${pascalName}.create(data);
+};
+
+const update = async (id, data) => {
+    return ${pascalName}.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+};
+
+const deleteById = async (id) => {
+    return ${pascalName}.findByIdAndDelete(id);
+};
 
 module.exports = {
-    create${pascalName}Schema,
-    update${pascalName}Schema
+    findAndCountAll,
+    findById,
+    create,
+    update,
+    deleteById
 };
-`,
-
-    [`${singularKebab}.repository.js`]: `const { Op } = require('sequelize');
+`
+    : `const { Op } = require('sequelize');
 const db = require('../../models');
 const ${pascalName} = db.${pascalName};
 
@@ -150,7 +179,30 @@ module.exports = {
     update,
     deleteById
 };
+`;
+
+const moduleTemplates = {
+    [`${singularKebab}.validation.js`]: `const Joi = require('joi');
+
+const create${pascalName}Schema = Joi.object({
+    name: Joi.string().min(2).max(255).required(),
+    description: Joi.string().allow('', null),
+    status: Joi.string().valid('active', 'inactive').default('active')
+});
+
+const update${pascalName}Schema = Joi.object({
+    name: Joi.string().min(2).max(255),
+    description: Joi.string().allow('', null),
+    status: Joi.string().valid('active', 'inactive')
+});
+
+module.exports = {
+    create${pascalName}Schema,
+    update${pascalName}Schema
+};
 `,
+
+    [`${singularKebab}.repository.js`]: repositoryTemplate,
 
     [`${singularKebab}.service.js`]: `const ${camelName}Repository = require('./${singularKebab}.repository');
 const ApiError = require('../../utils/ApiError');
@@ -295,7 +347,45 @@ Object.entries(moduleTemplates).forEach(([fileName, content]) => {
 // 2. Create Model File
 fs.mkdirSync(path.dirname(modelPath), { recursive: true });
 if (!fs.existsSync(modelPath)) {
-    const modelTemplate = `const { DataTypes } = require('sequelize');
+    const modelTemplate = isMongo
+        ? `const mongoose = require('mongoose');
+
+const ${camelName}Schema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        description: {
+            type: String,
+            default: ''
+        },
+        status: {
+            type: String,
+            enum: ['active', 'inactive'],
+            default: 'active'
+        }
+    },
+    {
+        timestamps: true
+    }
+);
+
+${camelName}Schema.set('toJSON', {
+    virtuals: true,
+    transform: (doc, ret) => {
+        ret.id = ret._id;
+        delete ret.__v;
+        return ret;
+    }
+});
+
+const ${pascalName} = mongoose.model('${pascalName}', ${camelName}Schema);
+
+module.exports = ${pascalName};
+`
+        : `const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const ${pascalName} = sequelize.define('${pascalName}', {
@@ -331,12 +421,13 @@ module.exports = ${pascalName};
     console.log(`⚠️ Model already exists: ${pascalName}.js`);
 }
 
-// 3. Create Migration File
-fs.mkdirSync(migrationPath, { recursive: true });
-const targetMigrationPath = path.join(migrationPath, migrationFile);
+// 3. Create Migration File (SQL Only)
+if (!isMongo) {
+    fs.mkdirSync(migrationPath, { recursive: true });
+    const targetMigrationPath = path.join(migrationPath, migrationFile);
 
-if (!fs.existsSync(targetMigrationPath)) {
-    const migrationTemplate = `'use strict';
+    if (!fs.existsSync(targetMigrationPath)) {
+        const migrationTemplate = `'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -378,8 +469,11 @@ module.exports = {
     }
 };
 `;
-    fs.writeFileSync(targetMigrationPath, migrationTemplate, 'utf8');
-    console.log(`📄 Created migration: ${migrationFile}`);
+        fs.writeFileSync(targetMigrationPath, migrationTemplate, 'utf8');
+        console.log(`📄 Created migration: ${migrationFile}`);
+    }
+} else {
+    console.log(`ℹ️  Migration skipped: MongoDB collections are created dynamically`);
 }
 
 // 4. Auto-register route in src/routes/index.js

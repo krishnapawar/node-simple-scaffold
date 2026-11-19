@@ -1,10 +1,14 @@
 const fs = require('fs');
 const path = require('path');
+const { detectDatabaseType } = require('./db-helper');
 
 const projectRoot = process.cwd();
+const dbType = detectDatabaseType(projectRoot);
+const isMongo = dbType === 'mongodb';
 
 console.log('\n🩺   Backend System Health Doctor\n');
 console.log('═════════════════════════════════════════════════════════════════════════');
+console.log(`  ℹ️  Detected Database Engine: ${isMongo ? 'MongoDB (Mongoose)' : 'MySQL (Sequelize)'}`);
 
 let issueCount = 0;
 
@@ -23,11 +27,11 @@ const envPath = path.join(projectRoot, '.env');
 if (fs.existsSync(envPath)) {
   console.log('  ✅  .env Configuration File: Found');
   const envContent = fs.readFileSync(envPath, 'utf8');
-  const requiredKeys = ['PORT', 'DB_HOST', 'DB_NAME', 'DB_USER'];
+  const requiredKeys = isMongo ? ['PORT', 'MONGODB_URI'] : ['PORT', 'DB_HOST', 'DB_NAME', 'DB_USER'];
   const missingKeys = requiredKeys.filter((key) => !envContent.includes(`${key}=`));
 
   if (missingKeys.length === 0) {
-    console.log('  ✅  Environment Variables: All core keys defined (PORT, DB_HOST, DB_NAME, DB_USER)');
+    console.log(`  ✅  Environment Variables: All core keys defined (${requiredKeys.join(', ')})`);
   } else {
     console.log(`  ⚠️  Environment Variables: Missing recommended keys -> ${missingKeys.join(', ')}`);
     issueCount++;
@@ -102,15 +106,27 @@ if (fs.existsSync(nodeModulesPath) && fs.existsSync(pkgPath)) {
 
 // 5. Test Database Connection
 async function checkDatabase() {
-  try {
-    const dbConfigPath = path.join(projectRoot, 'src', 'config', 'database');
-    const sequelize = require(dbConfigPath);
-    await sequelize.authenticate();
-    console.log('  ✅  Database Connection: Connected successfully to MySQL');
-  } catch (error) {
-    console.log(`  ⚠️  Database Connection: Unable to connect (${error.message})`);
-    console.log('      (Ensure MySQL service is running and .env database credentials are correct)');
-    issueCount++;
+  const dbConfigPath = path.join(projectRoot, 'src', 'config', 'database');
+  if (isMongo) {
+    try {
+      const connectDB = require(dbConfigPath);
+      await connectDB();
+      console.log('  ✅  Database Connection: Connected successfully to MongoDB');
+    } catch (error) {
+      console.log(`  ⚠️  Database Connection: Unable to connect (${error.message})`);
+      console.log('      (Ensure MongoDB service is running and MONGODB_URI in .env is correct)');
+      issueCount++;
+    }
+  } else {
+    try {
+      const sequelize = require(dbConfigPath);
+      await sequelize.authenticate();
+      console.log('  ✅  Database Connection: Connected successfully to MySQL');
+    } catch (error) {
+      console.log(`  ⚠️  Database Connection: Unable to connect (${error.message})`);
+      console.log('      (Ensure MySQL service is running and .env database credentials are correct)');
+      issueCount++;
+    }
   }
 
   console.log('═════════════════════════════════════════════════════════════════════════');

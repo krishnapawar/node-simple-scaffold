@@ -27,11 +27,19 @@ const sourcePascal = pascalCase(sourceName);
 const targetPascal = pascalCase(targetName);
 const validRelations = ['hasMany', 'belongsTo', 'hasOne', 'belongsToMany'];
 
+const { detectDatabaseType } = require('./db-helper');
+
 const relationType = validRelations.find(
   (r) => r.toLowerCase() === relationTypeInput.toLowerCase()
 ) || 'hasMany';
 
 const projectRoot = process.cwd();
+if (detectDatabaseType(projectRoot) === 'mongodb') {
+  console.log(`\nℹ️  Note: Sequelize associations (hasMany/belongsTo) are for SQL databases (MySQL).`);
+  console.log(`In MongoDB (Mongoose), reference relations are defined inside the Schema via ObjectId:`);
+  console.log(`  ${camelCase(targetPascal)}: { type: mongoose.Schema.Types.ObjectId, ref: '${targetPascal}' }\n`);
+  process.exit(0);
+}
 const modelsDir = path.join(projectRoot, 'src', 'models');
 const sourcePath = path.join(modelsDir, `${sourcePascal}.js`);
 

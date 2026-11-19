@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { detectDatabaseType } = require("./db-helper");
 
 const name = process.argv[2];
 
@@ -20,8 +21,14 @@ const pascalCase = (str) =>
     .replace(/[-_\s]+(.)?/g, (_, char) => (char ? char.toUpperCase() : ""))
     .replace(/^./, (char) => char.toUpperCase());
 
+const camelCase = (str) => {
+  const pascal = pascalCase(str);
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
+};
+
 const cleanName = name.replace(/s$/, "");
 const pascalName = pascalCase(cleanName);
+const camelName = camelCase(cleanName);
 const tableName = snakeCase(pascalName.endsWith("s") ? pascalName : `${pascalName}s`);
 
 const modelsPath = path.join(process.cwd(), "src", "models");
@@ -34,7 +41,43 @@ if (fs.existsSync(filePath)) {
   process.exit(0);
 }
 
-const content = `const { DataTypes } = require('sequelize');
+const isMongo = detectDatabaseType(process.cwd()) === "mongodb";
+
+const content = isMongo
+  ? `const mongoose = require('mongoose');
+
+const ${camelName}Schema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active'
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+${camelName}Schema.set('toJSON', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    ret.id = ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
+
+const ${pascalName} = mongoose.model('${pascalName}', ${camelName}Schema);
+
+module.exports = ${pascalName};
+`
+  : `const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const ${pascalName} = sequelize.define(
@@ -66,4 +109,4 @@ module.exports = ${pascalName};
 `;
 
 fs.writeFileSync(filePath, content, "utf8");
-console.log(`\n✅ Model created: src/models/${pascalName}.js\n`);
+console.log(`\n✅ Model created: src/models/${pascalName}.js [${isMongo ? 'Mongoose' : 'Sequelize'}]\n`);

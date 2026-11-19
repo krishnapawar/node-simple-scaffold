@@ -15,11 +15,11 @@ async function runInteractiveMenu() {
   console.log("🛠️   Node Simple Scaffold CLI Tool - Interactive Studio");
   console.log("=========================================================================\n");
   console.log(" Select an action to perform:\n");
-  console.log("  1)  Create Lightweight Project Structure");
+  console.log("  1)  Create Lightweight Project Structure (MySQL / MongoDB)");
   console.log("  2)  Scaffold Authentication Module (Register, Login, JWT)");
-  console.log("  3)  Scaffold Full Resource (Model + Migration + Module)");
+  console.log("  3)  Scaffold Full Resource (Model + Module)");
   console.log("  4)  Scaffold Layered Module (Controller, Service, Repo, Routes)");
-  console.log("  5)  Generate Model");
+  console.log("  5)  Generate Model (Sequelize / Mongoose)");
   console.log("  6)  Generate Controller");
   console.log("  7)  Generate Service");
   console.log("  8)  Generate Middleware");
@@ -28,11 +28,11 @@ async function runInteractiveMenu() {
   console.log("  11) Generate Database Seeder");
   console.log("  12) Generate Test Suite");
   console.log("  13) Generate Event Handler & Listener / Setup Events");
-  console.log("  14) Scaffold Model Association / Relation");
+  console.log("  14) Scaffold Model Association / Relation (SQL)");
   console.log("  15) Initialize Logs Directory");
   console.log("  16) View All Registered API Routes");
   console.log("  17) Run System Diagnostics & Health Check (Doctor)");
-  console.log("  18) Sync Database Tables");
+  console.log("  18) Sync Database Tables (SQL)");
   console.log("  0)  Exit\n");
 
   const choice = (await askQuestion("👉 Enter option (0-18): ")).trim();
@@ -43,7 +43,19 @@ async function runInteractiveMenu() {
 
   switch (choice) {
     case "1": {
+      const targetDir = await askQuestion("Enter project directory (leave empty for current directory): ");
+      console.log("\nSelect Database Engine:");
+      console.log("  1) SQL (MySQL / Sequelize) [Default]");
+      console.log("  2) NoSQL (MongoDB / Mongoose)\n");
+      const dbChoice = (await askQuestion("👉 Enter choice (1-2) [Default: 1]: ")).trim();
+      const dbFlag = dbChoice === "2" ? "--db=mongodb" : "--db=mysql";
+
       script = "create-structure.js";
+      args = [];
+      if (targetDir.trim()) {
+        args.push(targetDir.trim());
+      }
+      args.push(dbFlag);
       break;
     }
     case "2": {
@@ -168,6 +180,13 @@ async function runInteractiveMenu() {
       break;
     }
     case "18": {
+      const { detectDatabaseType } = require("./db-helper");
+      const currentDb = detectDatabaseType(process.cwd());
+      if (currentDb === "mongodb") {
+        console.log("\nℹ️ Table sync is specific to SQL/Sequelize databases. MongoDB schemas are managed dynamically by Mongoose.\n");
+        rl.close();
+        return;
+      }
       target = path.join(process.cwd(), "src/database/sync.js");
       break;
     }
