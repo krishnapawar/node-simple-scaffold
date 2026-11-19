@@ -20,7 +20,8 @@ npm run cli
 | Command | Master CLI Command | NPM Script Alias | Description |
 |---|---|---|---|
 | Master CLI | `node scripts/cli.js` | `npm run cli` | Master CLI dispatcher & help menu |
-| Project Structure | `node scripts/cli.js structure` | `npm run structure` | Generate complete backend project structure |
+| Project Structure | `node scripts/cli.js structure` | `npm run structure` | Generate lightweight backend project structure |
+| Auth Module | `node scripts/cli.js make:auth` | `npm run make:auth` | Scaffolds authentication module (`register`, `login`, profile, avatar, JWT) |
 | Resource Stack | `node scripts/cli.js make:resource <Name>` | `npm run make:resource -- <Name>` | Scaffolds model + migration + full API module |
 | Feature Module | `node scripts/cli.js make:module <Name>` | `npm run make:module -- <Name>` | Scaffolds layered module folder (`controller`, `service`, `repository`, `routes`, `validation`) |
 | Model | `node scripts/cli.js make:model <Name>` | `npm run make:model -- <Name>` | Generates a new Sequelize model |
@@ -31,8 +32,12 @@ npm run cli
 | Model Migration | `node scripts/cli.js model:migration <Name>` | `npm run model:migration -- <Name>` | Generates migration schema based on a model |
 | Email Notification | `node scripts/cli.js make:notification <Name>` | `npm run make:notification -- <Name>` | Generates HTML email notification service & mail config |
 | Cron Schedule Job | `node scripts/cli.js make:cron <Name> [Expression]` | `npm run make:cron -- <Name> "[Expression]"` | Generates a new cron schedule job & updates registry |
+| Init Jobs Folder | `node scripts/cli.js make:jobs` | `npm run make:jobs` | Initializes `src/jobs` directory and cron registry |
 | Database Seeder | `node scripts/cli.js make:seeder <Name>` | `npm run make:seeder -- <Name>` | Generates a timestamped database seeder |
 | Test Suite | `node scripts/cli.js make:test <Name>` | `npm run make:test -- <Name>` | Generates a new test suite file under `tests/` |
+| Event Handler | `node scripts/cli.js make:event <Name>` | `npm run make:event -- <Name>` | Generates a new event emitter & listener |
+| Init Events Folder | `node scripts/cli.js make:events` | `npm run make:events` | Initializes `src/events` directory and event registry |
+| Init Logs Folder | `node scripts/cli.js make:logs` | `npm run make:logs` | Initializes `logs/` directory with `.gitkeep` |
 | Interactive Studio | `node scripts/cli.js` | `npm run cli` | Master interactive CLI menu prompt |
 | Model Relation | `node scripts/cli.js make:relation <Source> <Target> [Type]` | `npm run make:relation -- <Source> <Target> [Type]` | Scaffolds Sequelize model association (`hasMany`, `belongsTo`, etc.) |
 | Route Visualizer | `node scripts/cli.js route:list` | `npm run route:list` | Displays formatted ASCII table of all registered API endpoints |
@@ -78,8 +83,8 @@ npm install --save-dev nodemon cross-env sequelize-cli
 
 ## 🚀 Script Usage Guide
 
-### 1. Project Structure Generation (`create-structure.js` / `structure`)
-Generates complete backend architecture including directories, models, controllers, services, middleware, utilities, configuration, Swagger docs, and updates `package.json`.
+### 1. Lightweight Project Structure Generation (`create-structure.js` / `structure`)
+Generates a clean, lightweight backend architecture including core directories, User model, controller, service, middleware, utilities, configuration, Swagger docs, and updates `package.json`. Extra directories (`src/jobs`, `src/events`, `logs`, `src/modules/auth`) are kept out until needed.
 
 ```bash
 # Standard run
@@ -93,7 +98,34 @@ node scripts/cli.js structure --force --skip-install
 
 ---
 
-### 2. Generate a Complete Resource (`make:resource`)
+### 2. Scaffold Authentication Module (`make:auth` / `auth`)
+Generates full authentication system: registration, login, profile retrieval, profile update, password change, and avatar upload endpoints with JWT Bearer security, auto-registered into `src/routes/index.js`.
+
+```bash
+node scripts/cli.js make:auth
+# or
+npm run make:auth
+```
+
+**Generates:**
+```
+src/
+├── models/
+│   └── User.js (ensured)
+├── middleware/
+│   └── auth.middleware.js (ensured)
+└── modules/
+    └── auth/
+        ├── auth.controller.js
+        ├── auth.service.js
+        ├── auth.repository.js
+        ├── auth.routes.js
+        └── auth.validation.js
+```
+
+---
+
+### 3. Generate a Complete Resource (`make:resource`)
 Scaffolds a complete feature stack: Model, Database Migration, and full API Module (`controller`, `service`, `repository`, `routes`, `validation`).
 
 ```bash

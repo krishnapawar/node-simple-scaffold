@@ -49,8 +49,11 @@ Once inside your project directory, use the generator commands to scaffold modul
 # Interactive Menu Studio
 npx node-simple-scaffold
 
-# Generate complete backend project structure
+# Generate lightweight backend project structure
 npx node-simple-scaffold structure
+
+# Scaffold authentication module (register, login, profile, avatar, JWT)
+npx node-simple-scaffold make:auth
 
 # Scaffold a full resource stack (module + model + migration)
 npx node-simple-scaffold make:resource Product
@@ -82,11 +85,23 @@ npx node-simple-scaffold make:notification WelcomeEmail
 # Generate a new cron schedule job
 npx node-simple-scaffold make:cron DailyReport "0 0 * * *"
 
+# Initialize jobs directory & scheduler registry on-demand
+npx node-simple-scaffold make:jobs
+
 # Generate a database seeder
 npx node-simple-scaffold make:seeder User
 
 # Scaffold association between Sequelize models
 npx node-simple-scaffold make:relation User Order hasMany
+
+# Generate a new event emitter & listener
+npx node-simple-scaffold make:event UserRegistered
+
+# Initialize events directory & event emitter registry on-demand
+npx node-simple-scaffold make:events
+
+# Initialize logs directory on-demand
+npx node-simple-scaffold make:logs
 
 # Generate a test suite file
 npx node-simple-scaffold make:test User
@@ -105,7 +120,8 @@ npx node-simple-scaffold doctor
 | Command | Alias / Usage | Description |
 |---|---|---|
 | `npx node-simple-scaffold` | `scaffold` | Interactive CLI dashboard studio |
-| `npx node-simple-scaffold [dir]` | `scaffold init [dir]` | Generate complete backend project structure |
+| `npx node-simple-scaffold [dir]` | `scaffold init [dir]` | Generate lightweight backend project structure |
+| `make:auth` | `auth` | Scaffolds authentication module (`register`, `login`, profile, avatar, JWT) |
 | `make:resource <Name>` | `make:resource Product` | Full resource stack (`module` + `model` + `migration`) |
 | `make:module <Name>` | `make:module Payment` | Scaffolds layered module (`controller`, `service`, `repository`, `routes`, `validation`) |
 | `make:model <Name>` | `make:model Vehicle` | Generates a new Sequelize model |
@@ -116,8 +132,12 @@ npx node-simple-scaffold doctor
 | `model:migration <Name>` | `model:migration User` | Generates migration schema automatically from a model |
 | `make:notification <Name>` | `make:notification ResetPass` | Generates HTML email notification service |
 | `make:cron <Name> [Cron]` | `make:cron Cleanup "0 0 * * *"` | Generates a new cron schedule job & updates registry |
+| `make:jobs` | `make:jobs` | Initializes `src/jobs` directory and cron registry |
 | `make:seeder <Name>` | `make:seeder Product` | Generates a database seeder file |
 | `make:relation <Src> <Tgt>` | `make:relation User Order hasMany` | Scaffolds Sequelize model relationship |
+| `make:event <Name>` | `make:event UserRegistered` | Generates a new event emitter & listener |
+| `make:events` | `make:events` | Initializes `src/events` directory and event registry |
+| `make:logs` | `logs` | Initializes `logs/` directory with `.gitkeep` |
 | `make:test <Name>` | `make:test Auth` | Generates a new test suite file under `tests/` |
 | `route:list` | `routes` | Displays ASCII table of all registered API endpoints |
 | `doctor` | `cli:doctor` | Performs health check on env, DB, and dependencies |
@@ -127,35 +147,41 @@ npx node-simple-scaffold doctor
 
 ## 📂 Project Structure Generated
 
-When running `npx node-simple-scaffold my-api`, the tool creates the following directory layout:
+When running `npx node-simple-scaffold my-api`, the tool creates a clean, lightweight directory layout without unnecessary folders:
 
 ```text
 my-api/
 ├── src/
 │   ├── config/             # Database, JWT, Mail & Env configurations
 │   ├── database/           # Migrations, seeders, sync script
-│   ├── events/             # Custom event emitters & listeners
-│   ├── jobs/               # Cron jobs & task scheduler
 │   ├── middleware/         # Auth, validation, error handling, rate limiting
-│   ├── models/             # Sequelize models
-│   ├── modules/            # Feature modules (Auth, Users, etc.)
-│   │   └── [feature]/
-│   │       ├── [feature].controller.js
-│   │       ├── [feature].service.js
-│   │       ├── [feature].repository.js
-│   │       ├── [feature].routes.js
-│   │       └── [feature].validation.js
-│   ├── notifications/      # HTML Email templates & mailer services
+│   ├── models/             # Sequelize models (User.js, index.js)
+│   ├── modules/            # Layered feature modules (Users, etc.)
+│   │   └── users/
+│   │       ├── user.controller.js
+│   │       ├── user.service.js
+│   │       ├── user.repository.js
+│   │       ├── user.routes.js
+│   │       └── user.validation.js
 │   ├── routes/             # Central route dispatcher
 │   ├── utils/              # Helper functions, logger, response handlers
+│   ├── constants/          # Status codes, roles
 │   └── app.js              # Express app entry point
-├── logs/                   # Log output files
-├── uploads/                # Static uploaded files
+├── uploads/                # Static uploaded files (.gitkeep)
 ├── tests/                  # Automated integration & unit tests
 ├── .env.example            # Environment variable template
 ├── package.json
 └── README.md
 ```
+
+### ⚡ On-Demand Folders & Features (Created only when needed)
+
+| Folder | Generator Command | Description |
+|---|---|---|
+| `src/modules/auth/` | `npx node-simple-scaffold make:auth` | Authentication system (`register`, `login`, profile, avatar, JWT) |
+| `src/jobs/` | `npx node-simple-scaffold make:cron <Name>` / `make:jobs` | Cron jobs & scheduler registry |
+| `src/events/` | `npx node-simple-scaffold make:event <Name>` / `make:events` | Event emitters & listener handlers |
+| `logs/` | `npx node-simple-scaffold make:logs` | Daily rotated log storage |
 
 ---
 

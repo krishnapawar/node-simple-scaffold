@@ -9,19 +9,27 @@ const extraArgs = process.argv.slice(3);
 const commands = {
   "structure": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
   },
   "init": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
   },
   "create": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
   },
   "new": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
+  },
+  "make:auth": {
+    script: "make-auth.js",
+    description: "Generate authentication module (register, login, profile, password, JWT)"
+  },
+  "auth": {
+    script: "make-auth.js",
+    description: "Generate authentication module (register, login, profile, password, JWT)"
   },
   "make:module": {
     script: "make-module.js",
@@ -75,6 +83,10 @@ const commands = {
     script: "make-cron.js",
     description: "Generate a new cron schedule job"
   },
+  "make:jobs": {
+    script: "make-cron.js",
+    description: "Initialize jobs directory & scheduler registry"
+  },
   "make:seeder": {
     script: "make-seeder.js",
     description: "Generate a new database seeder"
@@ -95,6 +107,10 @@ const commands = {
     script: "make-event.js",
     description: "Generate a new event emitter & listener"
   },
+  "make:events": {
+    script: "make-event.js",
+    description: "Initialize events directory & event emitter registry"
+  },
   "make:relation": {
     script: "make-relation.js",
     description: "Scaffold association between Sequelize models"
@@ -102,6 +118,14 @@ const commands = {
   "make:association": {
     script: "make-relation.js",
     description: "Scaffold association between Sequelize models"
+  },
+  "make:logs": {
+    script: "make-logs.js",
+    description: "Initialize logs directory"
+  },
+  "logs": {
+    script: "make-logs.js",
+    description: "Initialize logs directory"
   },
   "route:list": {
     script: "route-list.js",

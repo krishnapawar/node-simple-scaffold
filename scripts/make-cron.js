@@ -4,13 +4,39 @@ const path = require("path");
 const name = process.argv[2];
 const customExpression = process.argv[3];
 
-if (!name) {
-  console.error("\n❌ Please provide a cron job name.");
-  console.log("Example:");
-  console.log("  node scripts/cli.js make:cron CleanupLogs");
-  console.log("  node scripts/cli.js make:cron SendDailyReport \"0 9 * * 1-5\"");
-  console.log("  npm run make:cron -- CleanupLogs \"0 0 * * *\"\n");
-  process.exit(1);
+const projectRoot = process.cwd();
+const jobsDir = path.join(projectRoot, "src", "jobs");
+const indexFilePath = path.join(jobsDir, "index.js");
+
+// Allow initializing the jobs folder without a specific cron job name
+if (!name || name === "--init" || name === "init") {
+  fs.mkdirSync(jobsDir, { recursive: true });
+  if (!fs.existsSync(indexFilePath)) {
+    const emptyIndexContent = `const logger = require('../config/logger');
+
+/**
+ * Initialize all registered cron schedules
+ */
+const initAllCrons = () => {
+  try {
+    logger.info('Initializing system cron schedules...');
+    logger.info('No cron schedules registered yet.');
+  } catch (error) {
+    logger.error('Failed to initialize cron schedules:', error);
+  }
+};
+
+module.exports = {
+  initAllCrons
+};
+`;
+    fs.writeFileSync(indexFilePath, emptyIndexContent, "utf8");
+    console.log("\n📁 Initialized jobs folder: src/jobs/");
+    console.log("✅ Created central cron registry: src/jobs/index.js\n");
+  } else {
+    console.log("\n📁 Jobs folder already initialized: src/jobs/\n");
+  }
+  process.exit(0);
 }
 
 const kebabCase = (str) =>
@@ -44,10 +70,7 @@ const camelName = camelCase(normalizedKebab);
 
 const scheduleExpression = customExpression || "0 0 * * *"; // Default: Midnight every day
 
-const projectRoot = process.cwd();
-const jobsDir = path.join(projectRoot, "src", "jobs");
 const cronFilePath = path.join(jobsDir, `${normalizedKebab}.cron.js`);
-const indexFilePath = path.join(jobsDir, "index.js");
 
 fs.mkdirSync(jobsDir, { recursive: true });
 

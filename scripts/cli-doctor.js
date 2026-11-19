@@ -37,7 +37,7 @@ if (fs.existsSync(envPath)) {
   issueCount++;
 }
 
-// 3. Check Required Directory Structure
+// 3. Check Directory Structure
 const requiredFolders = [
   'src/config',
   'src/models',
@@ -45,11 +45,15 @@ const requiredFolders = [
   'src/routes',
   'src/middleware',
   'src/utils',
+  'uploads',
+  'tests'
+];
+
+const optionalFolders = [
   'src/jobs',
   'src/events',
   'logs',
-  'uploads',
-  'tests'
+  'src/modules/auth'
 ];
 
 const missingFolders = requiredFolders.filter(
@@ -57,10 +61,17 @@ const missingFolders = requiredFolders.filter(
 );
 
 if (missingFolders.length === 0) {
-  console.log('  ✅  Directory Structure: All required folders exist');
+  console.log('  ✅  Directory Structure: Core folders verified');
 } else {
-  console.log(`  ⚠️  Directory Structure: Missing folders -> ${missingFolders.join(', ')}`);
+  console.log(`  ⚠️  Directory Structure: Missing core folders -> ${missingFolders.join(', ')}`);
   issueCount++;
+}
+
+const installedOptional = optionalFolders.filter(
+  (folder) => fs.existsSync(path.join(projectRoot, folder))
+);
+if (installedOptional.length > 0) {
+  console.log(`  ℹ️  Optional Modules Active: ${installedOptional.join(', ')}`);
 }
 
 // 4. Check Node Modules Dependencies

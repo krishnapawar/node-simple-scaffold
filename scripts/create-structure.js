@@ -11,7 +11,7 @@ const nonFlagArgs = args.filter((arg) => !arg.startsWith("-"));
 const targetDirArg = nonFlagArgs[0];
 const projectRoot = targetDirArg ? path.resolve(process.cwd(), targetDirArg) : process.cwd();
 
-console.log("\n🚀 Creating backend project structure...\n");
+console.log("\n🚀 Creating lightweight backend project structure...\n");
 
 let stats = { created: 0, skipped: 0, overwritten: 0 };
 
@@ -52,7 +52,7 @@ const createFile = (relativePath, content = "") => {
 
 /*
 |--------------------------------------------------------------------------
-| Directories
+| Directories (Lightweight Starter)
 |--------------------------------------------------------------------------
 */
 
@@ -60,16 +60,12 @@ const folders = [
   "src/config",
   "src/database/migrations",
   "src/database/seeders",
-  "src/modules/auth",
   "src/modules/users",
   "src/models",
   "src/middleware",
   "src/routes",
   "src/utils",
   "src/constants",
-  "src/jobs",
-  "src/events",
-  "logs",
   "uploads",
   "tests",
 ];
@@ -79,7 +75,6 @@ folders.forEach((folder) => {
 });
 
 // Create .gitkeep files in empty tracking directories
-createFile("logs/.gitkeep", "");
 createFile("uploads/.gitkeep", "");
 
 /*
@@ -241,30 +236,6 @@ module.exports = setupSwagger;
 `
 );
 
-createFile(
-  "src/config/mail.js",
-  `require('dotenv').config();
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST || 'smtp.mailtrap.io',
-  port: Number(process.env.MAIL_PORT) || 2525,
-  secure: process.env.MAIL_SECURE === 'true',
-  auth: {
-    user: process.env.MAIL_USER || '',
-    pass: process.env.MAIL_PASSWORD || ''
-  }
-});
-
-const mailConfig = {
-  from: process.env.MAIL_FROM || '"Backend Platform" <noreply@Backend.com>',
-  transporter
-};
-
-module.exports = mailConfig;
-`
-);
-
 /*
 |--------------------------------------------------------------------------
 | Database
@@ -416,93 +387,6 @@ module.exports = User;
 */
 
 createFile(
-  "src/middleware/auth.middleware.js",
-  `const jwt = require('jsonwebtoken');
-const env = require('../config/env');
-const { User } = require('../models');
-
-const authMiddleware = async (req, res, next) => {
-  try {
-    const authorization = req.headers.authorization;
-    if (!authorization) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authorization token is required'
-      });
-    }
-
-    const token = authorization.startsWith('Bearer ')
-      ? authorization.substring(7)
-      : null;
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid authorization token'
-      });
-    }
-
-    const decoded = jwt.verify(token, env.jwt.secret);
-    const user = await User.findByPk(decoded.id);
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid or expired token'
-    });
-  }
-};
-
-module.exports = authMiddleware;
-`
-);
-
-createFile(
-  "src/middleware/upload.middleware.js",
-  `const multer = require('multer');
-const path = require('path');
-const ApiError = require('../utils/ApiError');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, \`avatar-\${uniqueSuffix}\${ext}\`);
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new ApiError(400, 'Invalid file type. Only JPG, PNG, and WEBP images are allowed'), false);
-  }
-};
-
-const uploadAvatar = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter
-});
-
-module.exports = { uploadAvatar };
-`
-);
-
-createFile(
   "src/middleware/validate.middleware.js",
   `const validate = (schema) => {
   return (req, res, next) => {
@@ -629,17 +513,38 @@ module.exports = asyncHandler;
 
 createFile(
   "src/utils/helpers.js",
-  `const bcrypt = require('bcryptjs');
+  `const slugify = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\\s+/g, '-')
+    .replace(/[^\\w\\-]+/g, '')
+    .replace(/\\-\\-+/g, '-');
+};
+
+const generateRandomString = (length = 32) => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
 const hashPassword = async (password) => {
+  const bcrypt = require('bcryptjs');
   return bcrypt.hash(password, 12);
 };
 
 const comparePassword = async (password, hashedPassword) => {
+  const bcrypt = require('bcryptjs');
   return bcrypt.compare(password, hashedPassword);
 };
 
 module.exports = {
+  slugify,
+  generateRandomString,
   hashPassword,
   comparePassword
 };
@@ -706,292 +611,7 @@ createFile(
 `
 );
 
-/*
-|--------------------------------------------------------------------------
-| Auth Module
-|--------------------------------------------------------------------------
-*/
-
-createFile(
-  "src/modules/auth/auth.validation.js",
-  `const Joi = require('joi');
-
-const registerSchema = Joi.object({
-  name: Joi.string().min(2).max(150).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  phone: Joi.string().allow('', null),
-  bio: Joi.string().allow('', null)
-});
-
-const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required()
-});
-
-const updateProfileSchema = Joi.object({
-  name: Joi.string().min(2).max(150),
-  phone: Joi.string().allow('', null),
-  bio: Joi.string().allow('', null)
-});
-
-const changePasswordSchema = Joi.object({
-  currentPassword: Joi.string().required(),
-  newPassword: Joi.string().min(6).required()
-});
-
-module.exports = {
-  registerSchema,
-  loginSchema,
-  updateProfileSchema,
-  changePasswordSchema
-};
-`
-);
-
-createFile(
-  "src/modules/auth/auth.controller.js",
-  `const authService = require('./auth.service');
-const ApiResponse = require('../../utils/ApiResponse');
-const ApiError = require('../../utils/ApiError');
-
-const register = async (req, res, next) => {
-  try {
-    const user = await authService.register(req.body);
-    return ApiResponse.success(res, user, 'Registration successful', 201);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const login = async (req, res, next) => {
-  try {
-    const result = await authService.login(req.body);
-    return ApiResponse.success(res, result, 'Login successful');
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getProfile = async (req, res, next) => {
-  try {
-    const user = await authService.getProfile(req.user.id);
-    return ApiResponse.success(res, user, 'Profile retrieved successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateProfile = async (req, res, next) => {
-  try {
-    const user = await authService.updateProfile(req.user.id, req.body);
-    return ApiResponse.success(res, user, 'Profile updated successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-const changePassword = async (req, res, next) => {
-  try {
-    const result = await authService.changePassword(req.user.id, req.body);
-    return ApiResponse.success(res, result, 'Password updated successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateAvatar = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      throw new ApiError(400, 'Avatar image file is required');
-    }
-    const user = await authService.updateAvatar(req.user.id, req.file.filename);
-    return ApiResponse.success(res, user, 'Avatar updated successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-module.exports = {
-  register,
-  login,
-  getProfile,
-  updateProfile,
-  changePassword,
-  updateAvatar
-};
-`
-);
-
-createFile(
-  "src/modules/auth/auth.service.js",
-  `const fs = require('fs');
-const path = require('path');
-const jwt = require('jsonwebtoken');
-const authRepository = require('./auth.repository');
-const { hashPassword, comparePassword } = require('../../utils/helpers');
-const env = require('../../config/env');
-const ApiError = require('../../utils/ApiError');
-
-const register = async (data) => {
-  const existingUser = await authRepository.findByEmail(data.email);
-  if (existingUser) {
-    throw new ApiError(409, 'Email already exists');
-  }
-
-  const password = await hashPassword(data.password);
-  const user = await authRepository.create({
-    ...data,
-    password
-  });
-
-  const userJson = user.toJSON();
-  delete userJson.password;
-  return userJson;
-};
-
-const login = async ({ email, password }) => {
-  const user = await authRepository.findByEmail(email);
-  if (!user) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  const valid = await comparePassword(password, user.password);
-  if (!valid) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  const token = jwt.sign({ id: user.id }, env.jwt.secret, {
-    expiresIn: env.jwt.expiresIn
-  });
-
-  const userJson = user.toJSON();
-  delete userJson.password;
-
-  return { user: userJson, token };
-};
-
-const getProfile = async (userId) => {
-  const user = await authRepository.findById(userId);
-  if (!user) {
-    throw new ApiError(404, 'User not found');
-  }
-  const userJson = user.toJSON();
-  delete userJson.password;
-  return userJson;
-};
-
-const updateProfile = async (userId, data) => {
-  const user = await authRepository.findById(userId);
-  if (!user) {
-    throw new ApiError(404, 'User not found');
-  }
-
-  await user.update(data);
-  const updatedUser = user.toJSON();
-  delete updatedUser.password;
-  return updatedUser;
-};
-
-const changePassword = async (userId, { currentPassword, newPassword }) => {
-  const user = await authRepository.findById(userId);
-  if (!user) {
-    throw new ApiError(404, 'User not found');
-  }
-
-  const valid = await comparePassword(currentPassword, user.password);
-  if (!valid) {
-    throw new ApiError(400, 'Current password is incorrect');
-  }
-
-  const hashedPassword = await hashPassword(newPassword);
-  await user.update({ password: hashedPassword });
-  return { message: 'Password updated successfully' };
-};
-
-const updateAvatar = async (userId, filename) => {
-  const user = await authRepository.findById(userId);
-  if (!user) {
-    throw new ApiError(404, 'User not found');
-  }
-
-  if (user.avatar) {
-    const oldPath = path.join(__dirname, '../../../', user.avatar);
-    if (fs.existsSync(oldPath)) {
-      try { fs.unlinkSync(oldPath); } catch (e) {}
-    }
-  }
-
-  const avatarUrl = \`uploads/\${filename}\`;
-  await user.update({ avatar: avatarUrl });
-
-  const userJson = user.toJSON();
-  delete userJson.password;
-  return userJson;
-};
-
-module.exports = {
-  register,
-  login,
-  getProfile,
-  updateProfile,
-  changePassword,
-  updateAvatar
-};
-`
-);
-
-createFile(
-  "src/modules/auth/auth.repository.js",
-  `const { User } = require('../../models');
-
-const findByEmail = async (email) => {
-  return User.findOne({ where: { email } });
-};
-
-const findById = async (id) => {
-  return User.findByPk(id);
-};
-
-const create = async (data) => {
-  return User.create(data);
-};
-
-module.exports = {
-  findByEmail,
-  findById,
-  create
-};
-`
-);
-
-createFile(
-  "src/modules/auth/auth.routes.js",
-  `const express = require('express');
-const controller = require('./auth.controller');
-const validate = require('../../middleware/validate.middleware');
-const authMiddleware = require('../../middleware/auth.middleware');
-const { uploadAvatar } = require('../../middleware/upload.middleware');
-const {
-  registerSchema,
-  loginSchema,
-  updateProfileSchema,
-  changePasswordSchema
-} = require('./auth.validation');
-
-const router = express.Router();
-
-router.post('/register', validate(registerSchema), controller.register);
-router.post('/login', validate(loginSchema), controller.login);
-
-router.get('/me', authMiddleware, controller.getProfile);
-router.put('/profile', authMiddleware, validate(updateProfileSchema), controller.updateProfile);
-router.put('/change-password', authMiddleware, validate(changePasswordSchema), controller.changePassword);
-router.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), controller.updateAvatar);
-
-module.exports = router;
-`
-);
+// Auth module is scaffolded on-demand via: node scripts/cli.js make:auth
 
 /*
 |--------------------------------------------------------------------------
@@ -1114,12 +734,11 @@ module.exports = {
     `src/modules/${name}/${singular}.routes.js`,
     `const express = require('express');
 const controller = require('./${singular}.controller');
-const authMiddleware = require('../../middleware/auth.middleware');
 
 const router = express.Router();
 
-router.get('/', authMiddleware, controller.index);
-router.get('/:id', authMiddleware, controller.show);
+router.get('/', controller.index);
+router.get('/:id', controller.show);
 
 module.exports = router;
 `
@@ -1150,12 +769,10 @@ createFile(
   "src/routes/index.js",
   `const express = require('express');
 
-const authRoutes = require('../modules/auth/auth.routes');
 const userRoutes = require('../modules/users/user.routes');
 
 const router = express.Router();
 
-router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 
 module.exports = router;
@@ -1369,19 +986,27 @@ const extraArgs = process.argv.slice(3);
 const commands = {
   "structure": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
   },
   "init": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
   },
   "create": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
   },
   "new": {
     script: "create-structure.js",
-    description: "Generate complete backend project structure"
+    description: "Generate lightweight backend project structure"
+  },
+  "make:auth": {
+    script: "make-auth.js",
+    description: "Generate authentication module (register, login, profile, password, JWT)"
+  },
+  "auth": {
+    script: "make-auth.js",
+    description: "Generate authentication module (register, login, profile, password, JWT)"
   },
   "make:module": {
     script: "make-module.js",
@@ -1435,6 +1060,10 @@ const commands = {
     script: "make-cron.js",
     description: "Generate a new cron schedule job"
   },
+  "make:jobs": {
+    script: "make-cron.js",
+    description: "Initialize jobs directory & scheduler registry"
+  },
   "make:seeder": {
     script: "make-seeder.js",
     description: "Generate a new database seeder"
@@ -1455,6 +1084,10 @@ const commands = {
     script: "make-event.js",
     description: "Generate a new event emitter & listener"
   },
+  "make:events": {
+    script: "make-event.js",
+    description: "Initialize events directory & event emitter registry"
+  },
   "make:relation": {
     script: "make-relation.js",
     description: "Scaffold association between Sequelize models"
@@ -1462,6 +1095,14 @@ const commands = {
   "make:association": {
     script: "make-relation.js",
     description: "Scaffold association between Sequelize models"
+  },
+  "make:logs": {
+    script: "make-logs.js",
+    description: "Initialize logs directory"
+  },
+  "logs": {
+    script: "make-logs.js",
+    description: "Initialize logs directory"
   },
   "route:list": {
     script: "route-list.js",
@@ -1587,7 +1228,8 @@ npm run cli
 | Command | Master CLI Command | NPM Script Alias | Description |
 |---|---|---|---|
 | Master CLI | \`node scripts/cli.js\` | \`npm run cli\` | Master CLI dispatcher & help menu |
-| Project Structure | \`node scripts/cli.js structure\` | \`npm run structure\` | Generate complete backend project structure |
+| Project Structure | \`node scripts/cli.js structure\` | \`npm run structure\` | Generate lightweight backend project structure |
+| Auth Module | \`node scripts/cli.js make:auth\` | \`npm run make:auth\` | Scaffolds authentication module (\`register\`, \`login\`, profile, avatar, JWT) |
 | Resource Stack | \`node scripts/cli.js make:resource <Name>\` | \`npm run make:resource -- <Name>\` | Scaffolds model + migration + full API module |
 | Feature Module | \`node scripts/cli.js make:module <Name>\` | \`npm run make:module -- <Name>\` | Scaffolds layered module folder (\`controller\`, \`service\`, \`repository\`, \`routes\`, \`validation\`) |
 | Model | \`node scripts/cli.js make:model <Name>\` | \`npm run make:model -- <Name>\` | Generates a new Sequelize model |
@@ -1596,6 +1238,18 @@ npm run cli
 | Middleware | \`node scripts/cli.js make:middleware <Name>\` | \`npm run make:middleware -- <Name>\` | Generates a new middleware file |
 | Blank Migration | \`node scripts/cli.js make:migration <Name>\` | \`npm run make:migration -- <Name>\` | Generates a timestamped empty migration file |
 | Model Migration | \`node scripts/cli.js model:migration <Name>\` | \`npm run model:migration -- <Name>\` | Generates migration schema based on a model |
+| Email Notification | \`node scripts/cli.js make:notification <Name>\` | \`npm run make:notification -- <Name>\` | Generates HTML email notification service & mail config |
+| Cron Schedule Job | \`node scripts/cli.js make:cron <Name> [Expression]\` | \`npm run make:cron -- <Name> "[Expression]"\` | Generates a new cron schedule job & updates registry |
+| Init Jobs Folder | \`node scripts/cli.js make:jobs\` | \`npm run make:jobs\` | Initializes \`src/jobs\` directory and cron registry |
+| Database Seeder | \`node scripts/cli.js make:seeder <Name>\` | \`npm run make:seeder -- <Name>\` | Generates a timestamped database seeder |
+| Test Suite | \`node scripts/cli.js make:test <Name>\` | \`npm run make:test -- <Name>\` | Generates a new test suite file under \`tests/\` |
+| Event Handler | \`node scripts/cli.js make:event <Name>\` | \`npm run make:event -- <Name>\` | Generates a new event emitter & listener |
+| Init Events Folder | \`node scripts/cli.js make:events\` | \`npm run make:events\` | Initializes \`src/events\` directory and event registry |
+| Init Logs Folder | \`node scripts/cli.js make:logs\` | \`npm run make:logs\` | Initializes \`logs/\` directory with \`.gitkeep\` |
+| Interactive Studio | \`node scripts/cli.js\` | \`npm run cli\` | Master interactive CLI menu prompt |
+| Model Relation | \`node scripts/cli.js make:relation <Source> <Target> [Type]\` | \`npm run make:relation -- <Source> <Target> [Type]\` | Scaffolds Sequelize model association (\`hasMany\`, \`belongsTo\`, etc.) |
+| Route Visualizer | \`node scripts/cli.js route:list\` | \`npm run route:list\` | Displays formatted ASCII table of all registered API endpoints |
+| System Doctor | \`node scripts/cli.js doctor\` | \`npm run doctor\` | Performs diagnostic health check on env, DB, and packages |
 | Database Sync | \`node scripts/cli.js db:sync\` | \`npm run db:sync\` | Syncs Sequelize models with database tables |
 | Flow Test | \`node scripts/cli.js test:flow\` | \`node scripts/test-api-flow.js\` | Runs automated verification test suite |
 
@@ -1746,40 +1400,12 @@ const updatePackageScripts = () => {
 
   pkg.scripts = {
     ...(pkg.scripts || {}),
-    "structure": "node scripts/cli.js structure",
     "dev": "cross-env NODE_ENV=development nodemon src/index.js",
     "start": "cross-env NODE_ENV=production node src/index.js",
-    "cli": "node scripts/cli.js",
-    "make:module": "node scripts/cli.js make:module",
-    "make:resource": "node scripts/cli.js make:resource",
-    "make:model": "node scripts/cli.js make:model",
-    "make:controller": "node scripts/cli.js make:controller",
-    "make:service": "node scripts/cli.js make:service",
-    "make:middleware": "node scripts/cli.js make:middleware",
-    "make:migration": "node scripts/cli.js make:migration",
-    "model:migration": "node scripts/cli.js model:migration",
-    "db:sync": "node scripts/cli.js db:sync",
     "db:seed:all": "sequelize-cli db:seed:all",
     "db:seed": "sequelize-cli db:seed --seed",
     "db:migrate:undo:all": "sequelize-cli db:migrate:undo:all",
-    "db:migrate": "sequelize-cli db:migrate",
-    "make:notification": "node scripts/cli.js make:notification",
-    "make:email": "node scripts/cli.js make:notification",
-    "make:cron": "node scripts/cli.js make:cron",
-    "make:schedule": "node scripts/cli.js make:cron",
-    "make:job": "node scripts/cli.js make:cron",
-    "make:seeder": "node scripts/cli.js make:seeder",
-    "make:seed": "node scripts/cli.js make:seeder",
-    "make:test": "node scripts/cli.js make:test",
-    "make:event": "node scripts/cli.js make:event",
-    "make:listener": "node scripts/cli.js make:event",
-    "make:relation": "node scripts/cli.js make:relation",
-    "make:association": "node scripts/cli.js make:relation",
-    "route:list": "node scripts/cli.js route:list",
-    "routes": "node scripts/cli.js route:list",
-    "doctor": "node scripts/cli.js doctor",
-    "cli:doctor": "node scripts/cli.js doctor",
-    "test:flow": "node scripts/cli.js test:flow"
+    "db:migrate": "sequelize-cli db:migrate"
   };
 
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
@@ -1827,10 +1453,11 @@ if (skipInstall) {
 */
 
 console.log("════════════════════════════════════════");
-console.log("✅ Backend structure generated successfully");
+console.log("✅ Lightweight backend structure generated successfully");
 console.log("════════════════════════════════════════");
 console.log(`📊 Summary: ${stats.created} created | ${stats.overwritten} overwritten | ${stats.skipped} skipped\n`);
 console.log("Next steps:");
 console.log("1. Configure .env");
 console.log("2. Ensure MySQL database exists");
-console.log("3. Run: npm run dev\n");
+console.log("3. (Optional) Run: npm run make:auth (to scaffold authentication)");
+console.log("4. Run: npm run dev\n");

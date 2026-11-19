@@ -3,12 +3,43 @@ const path = require('path');
 
 const name = process.argv[2];
 
-if (!name) {
-  console.error('\n❌ Please provide an event name.');
-  console.log('Example:');
-  console.log('  node scripts/cli.js make:event UserRegistered');
-  console.log('  npm run make:event -- OrderPlaced\n');
-  process.exit(1);
+const projectRoot = process.cwd();
+const eventsDir = path.join(projectRoot, 'src', 'events');
+const indexFilePath = path.join(eventsDir, 'index.js');
+
+// Allow initializing the events folder without a specific event name
+if (!name || name === '--init' || name === 'init') {
+  fs.mkdirSync(eventsDir, { recursive: true });
+  if (!fs.existsSync(indexFilePath)) {
+    const emptyIndexContent = `const EventEmitter = require('events');
+const logger = require('../config/logger');
+
+const eventEmitter = new EventEmitter();
+
+/**
+ * Register all system event listeners
+ */
+const initAllEvents = () => {
+  try {
+    logger.info('Registering system event listeners...');
+    logger.info('No system events registered yet.');
+  } catch (error) {
+    logger.error('Failed to register event listeners:', error);
+  }
+};
+
+module.exports = {
+  eventEmitter,
+  initAllEvents
+};
+`;
+    fs.writeFileSync(indexFilePath, emptyIndexContent, 'utf8');
+    console.log('\n📁 Initialized events folder: src/events/');
+    console.log('✅ Created central event registry: src/events/index.js\n');
+  } else {
+    console.log('\n📁 Events folder already initialized: src/events/\n');
+  }
+  process.exit(0);
 }
 
 const kebabCase = (str) =>
@@ -36,10 +67,7 @@ const normalizedKebab = kebabCase(cleanName.trim());
 const pascalName = pascalCase(normalizedKebab);
 const camelName = camelCase(normalizedKebab);
 
-const projectRoot = process.cwd();
-const eventsDir = path.join(projectRoot, 'src', 'events');
 const eventFilePath = path.join(eventsDir, `${pascalName}Event.js`);
-const indexFilePath = path.join(eventsDir, 'index.js');
 
 fs.mkdirSync(eventsDir, { recursive: true });
 

@@ -21,6 +21,9 @@
   "homepage": "https://github.com/krishnapawar/node-simple-scaffold#readme",
   "keywords": [
     "cli",
+    "node-simple-scaffold",
+    "npx node-simple-scaffold",
+    "node-scaffold",
     "scaffold",
     "scaffolding",
     "generator",
@@ -46,6 +49,7 @@
   "scripts": {
     "start": "node bin/cli.js",
     "structure": "node bin/cli.js structure",
+    "make:auth": "node bin/cli.js make:auth",
     "cli": "node bin/cli.js"
   }
 }
