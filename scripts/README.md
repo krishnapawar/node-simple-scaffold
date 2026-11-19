@@ -198,7 +198,19 @@ src/
 
 ---
 
-### 5. System Test & Verification Runner (`test-api-flow.js`)
+### 5. Uploads & Constants Generators (`make:uploads` / `make:constants`)
+- `make:uploads`: Initializes `uploads/` directory with `.gitkeep` and scaffolds `src/middleware/upload.middleware.js` (auto-installs `multer` on demand).
+- `make:constants`: Initializes `src/constants/` with `roles.js`, `statusCodes.js`, and `index.js`, or creates a custom constant file (`make:constants permissions`).
+
+```bash
+node scripts/cli.js make:uploads
+node scripts/cli.js make:constants
+node scripts/cli.js make:constants permissions
+```
+
+---
+
+### 6. System Test & Verification Runner (`test-api-flow.js`)
 Executes an automated test suite verifying database model registrations, foreign key associations, Express routing, and status constants.
 
 ```bash

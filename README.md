@@ -106,6 +106,12 @@ npx node-simple-scaffold make:events
 # Initialize logs directory on-demand
 npx node-simple-scaffold make:logs
 
+# Initialize uploads directory on-demand
+npx node-simple-scaffold make:uploads
+
+# Initialize constants directory on-demand (roles, status codes)
+npx node-simple-scaffold make:constants
+
 # Generate a test suite file
 npx node-simple-scaffold make:test User
 
@@ -141,6 +147,8 @@ npx node-simple-scaffold doctor
 | `make:event <Name>` | `make:event UserRegistered` | Generates a new event emitter & listener |
 | `make:events` | `make:events` | Initializes `src/events` directory and event registry |
 | `make:logs` | `logs` | Initializes `logs/` directory with `.gitkeep` |
+| `make:uploads` | `uploads` | Initializes `uploads/` directory & upload middleware |
+| `make:constants` | `constants` | Initializes `src/constants/` with roles & status codes |
 | `make:test <Name>` | `make:test Auth` | Generates a new test suite file under `tests/` |
 | `route:list` | `routes` | Displays ASCII table of all registered API endpoints |
 | `doctor` | `cli:doctor` | Performs health check on env, DB, and dependencies |

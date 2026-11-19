@@ -48,15 +48,16 @@ const requiredFolders = [
   'src/modules',
   'src/routes',
   'src/middleware',
-  'src/utils',
-  'uploads',
-  'tests'
+  'src/utils'
 ];
 
 const optionalFolders = [
   'src/jobs',
   'src/events',
   'logs',
+  'uploads',
+  'src/constants',
+  'tests',
   'src/modules/auth'
 ];
 

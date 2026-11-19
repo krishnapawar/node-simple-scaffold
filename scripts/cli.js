@@ -127,6 +127,26 @@ const commands = {
     script: "make-logs.js",
     description: "Initialize logs directory"
   },
+  "make:uploads": {
+    script: "make-uploads.js",
+    description: "Initialize uploads directory & upload middleware"
+  },
+  "uploads": {
+    script: "make-uploads.js",
+    description: "Initialize uploads directory & upload middleware"
+  },
+  "make:upload": {
+    script: "make-uploads.js",
+    description: "Initialize uploads directory & upload middleware"
+  },
+  "make:constants": {
+    script: "make-constants.js",
+    description: "Initialize constants directory (roles, status codes)"
+  },
+  "constants": {
+    script: "make-constants.js",
+    description: "Initialize constants directory (roles, status codes)"
+  },
   "route:list": {
     script: "route-list.js",
     description: "Display formatted table of all registered API endpoints"

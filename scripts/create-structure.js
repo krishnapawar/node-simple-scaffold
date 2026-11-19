@@ -99,9 +99,7 @@ async function run() {
       "src/models",
       "src/middleware",
       "src/routes",
-      "src/utils",
-      "src/constants",
-      "uploads"
+      "src/utils"
     ]
     : [
       "src/config",
@@ -111,17 +109,12 @@ async function run() {
       "src/models",
       "src/middleware",
       "src/routes",
-      "src/utils",
-      "src/constants",
-      "uploads"
+      "src/utils"
     ];
 
   folders.forEach((folder) => {
     createDirectory(path.join(projectRoot, folder));
   });
-
-  // Create .gitkeep files in empty tracking directories
-  createFile("uploads/.gitkeep", "");
 
   /*
   |--------------------------------------------------------------------------
@@ -755,35 +748,6 @@ module.exports = {
 
   /*
   |--------------------------------------------------------------------------
-  | Constants
-  |--------------------------------------------------------------------------
-  */
-
-  createFile(
-    "src/constants/roles.js",
-    `module.exports = Object.freeze({
-  ADMIN: 'admin',
-  USER: 'user'
-});
-`
-  );
-
-  createFile(
-    "src/constants/statusCodes.js",
-    `module.exports = Object.freeze({
-  OK: 200,
-  CREATED: 201,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  INTERNAL_SERVER_ERROR: 500
-});
-`
-  );
-
-  /*
-  |--------------------------------------------------------------------------
   | Default Modules (Users)
   |--------------------------------------------------------------------------
   */
@@ -993,6 +957,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 
 const routes = require('./routes');
 const notFoundMiddleware = require('./middleware/notFound.middleware');
@@ -1012,8 +977,11 @@ app.use(morgan('dev'));
 // Setup Interactive Swagger UI Documentation
 setupSwagger(app);
 
-// Serve uploaded static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve uploaded static files if directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (fs.existsSync(uploadsDir)) {
+  app.use('/uploads', express.static(uploadsDir));
+}
 
 // Health Check
 app.get('/health', (req, res) => {

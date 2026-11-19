@@ -30,12 +30,14 @@ async function runInteractiveMenu() {
   console.log("  13) Generate Event Handler & Listener / Setup Events");
   console.log("  14) Scaffold Model Association / Relation (SQL)");
   console.log("  15) Initialize Logs Directory");
-  console.log("  16) View All Registered API Routes");
-  console.log("  17) Run System Diagnostics & Health Check (Doctor)");
-  console.log("  18) Sync Database Tables (SQL)");
+  console.log("  16) Initialize Uploads Directory");
+  console.log("  17) Initialize Constants Directory");
+  console.log("  18) View All Registered API Routes");
+  console.log("  19) Run System Diagnostics & Health Check (Doctor)");
+  console.log("  20) Sync Database Tables (SQL)");
   console.log("  0)  Exit\n");
 
-  const choice = (await askQuestion("👉 Enter option (0-18): ")).trim();
+  const choice = (await askQuestion("👉 Enter option (0-20): ")).trim();
 
   let script = "";
   let args = [];
@@ -172,14 +174,26 @@ async function runInteractiveMenu() {
       break;
     }
     case "16": {
-      script = "route-list.js";
+      script = "make-uploads.js";
       break;
     }
     case "17": {
-      script = "cli-doctor.js";
+      const name = await askQuestion("Enter Constant Name (leave empty for roles & statusCodes): ");
+      script = "make-constants.js";
+      if (name.trim()) {
+        args = [name.trim()];
+      }
       break;
     }
     case "18": {
+      script = "route-list.js";
+      break;
+    }
+    case "19": {
+      script = "cli-doctor.js";
+      break;
+    }
+    case "20": {
       const { detectDatabaseType } = require("./db-helper");
       const currentDb = detectDatabaseType(process.cwd());
       if (currentDb === "mongodb") {
