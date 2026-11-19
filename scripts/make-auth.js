@@ -455,7 +455,71 @@ module.exports = authMiddleware;
   );
 }
 
-// 5. Auto-register route in src/routes/index.js
+// 5. Ensure upload.middleware.js exists
+const uploadMiddlewarePath = path.join(middlewareDir, 'upload.middleware.js');
+if (!fs.existsSync(uploadMiddlewarePath) || forceOverwrite) {
+  createFile(
+    'src/middleware/upload.middleware.js',
+    `const multer = require('multer');
+const path = require('path');
+const ApiError = require('../utils/ApiError');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../../uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, \`avatar-\${uniqueSuffix}\${ext}\`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new ApiError(400, 'Invalid file type. Only JPG, PNG, and WEBP images are allowed'), false);
+  }
+};
+
+const uploadAvatar = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter
+});
+
+module.exports = { uploadAvatar };
+`
+  );
+}
+
+// 6. Ensure auth dependencies are installed
+const nodeModulesPath = path.join(projectRoot, 'node_modules');
+if (fs.existsSync(nodeModulesPath)) {
+  const requiredPkgs = ['jsonwebtoken', 'bcryptjs', 'multer'];
+  const missingPkgs = requiredPkgs.filter(
+    (pkg) => !fs.existsSync(path.join(nodeModulesPath, pkg))
+  );
+
+  if (missingPkgs.length > 0) {
+    console.log(`\n📦 Installing missing auth packages (${missingPkgs.join(', ')})...`);
+    try {
+      const { execSync } = require('child_process');
+      execSync(`npm install ${missingPkgs.join(' ')}`, {
+        cwd: projectRoot,
+        stdio: 'inherit',
+        shell: true
+      });
+      console.log('✅ Auth packages installed successfully!\n');
+    } catch (e) {
+      console.warn(`⚠️ Could not auto-install: npm install ${missingPkgs.join(' ')}`);
+    }
+  }
+}
+
+// 7. Auto-register route in src/routes/index.js
 if (fs.existsSync(routesIndexPath)) {
   let indexContent = fs.readFileSync(routesIndexPath, 'utf8');
   const routeRequire = "const authRoutes = require('../modules/auth/auth.routes');";

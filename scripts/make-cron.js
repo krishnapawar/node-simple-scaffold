@@ -39,6 +39,19 @@ module.exports = {
   process.exit(0);
 }
 
+// Ensure node-cron dependency is installed
+const nodeModulesPath = path.join(projectRoot, 'node_modules');
+if (fs.existsSync(nodeModulesPath) && !fs.existsSync(path.join(nodeModulesPath, 'node-cron'))) {
+  console.log('\n📦 Installing required package (node-cron)...');
+  try {
+    const { execSync } = require('child_process');
+    execSync('npm install node-cron', { cwd: projectRoot, stdio: 'inherit', shell: true });
+    console.log('✅ node-cron installed successfully!\n');
+  } catch (e) {
+    console.warn('⚠️ Could not auto-install node-cron. Please run: npm install node-cron');
+  }
+}
+
 const kebabCase = (str) =>
   str
     .replace(/([a-z])([A-Z])/g, "$1-$2")

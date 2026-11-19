@@ -26,6 +26,20 @@ const pascalName = pascalCase(cleanName);
 const camelName = camelCase(cleanName);
 
 const projectRoot = process.cwd();
+
+// Ensure nodemailer dependency is installed
+const nodeModulesPath = path.join(projectRoot, 'node_modules');
+if (fs.existsSync(nodeModulesPath) && !fs.existsSync(path.join(nodeModulesPath, 'nodemailer'))) {
+  console.log('\n📦 Installing required package (nodemailer)...');
+  try {
+    const { execSync } = require('child_process');
+    execSync('npm install nodemailer', { cwd: projectRoot, stdio: 'inherit', shell: true });
+    console.log('✅ nodemailer installed successfully!\n');
+  } catch (e) {
+    console.warn('⚠️ Could not auto-install nodemailer. Please run: npm install nodemailer');
+  }
+}
+
 const configPath = path.join(projectRoot, "src", "config", "mail.js");
 const notificationDir = path.join(projectRoot, "src", "notifications", "email");
 const filePath = path.join(notificationDir, `${pascalName}Notification.js`);

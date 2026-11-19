@@ -967,412 +967,29 @@ npm run migrate
 npm run db:sync
 \`\`\`
 
-## Resource Generator
+## CLI Code Generators (NPX)
+
+Run all generators via \`npx node-simple-scaffold\` or the shortcut \`npx scaffold\`:
 
 \`\`\`bash
-npm run make:resource -- Product
+# Interactive studio
+npx scaffold
+
+# Scaffold authentication (register, login, JWT)
+npx scaffold make:auth
+
+# Scaffold full resource stack (model + migration + module)
+npx scaffold make:resource Product
+
+# Scaffold feature module
+npx scaffold make:module Payment
+
+# View all registered endpoints
+npx scaffold route:list
+
+# System diagnostics & health check
+npx scaffold doctor
 \`\`\`
-`
-);
-
-createFile(
-  "scripts/cli.js",
-  `const path = require("path");
-const { fork } = require("child_process");
-
-const command = process.argv[2];
-const extraArgs = process.argv.slice(3);
-
-const commands = {
-  "structure": {
-    script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
-  },
-  "init": {
-    script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
-  },
-  "create": {
-    script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
-  },
-  "new": {
-    script: "create-structure.js",
-    description: "Generate lightweight backend project structure"
-  },
-  "make:auth": {
-    script: "make-auth.js",
-    description: "Generate authentication module (register, login, profile, password, JWT)"
-  },
-  "auth": {
-    script: "make-auth.js",
-    description: "Generate authentication module (register, login, profile, password, JWT)"
-  },
-  "make:module": {
-    script: "make-module.js",
-    description: "Generate a new feature module (controller, service, repository, routes, validation)"
-  },
-  "make:resource": {
-    script: "make-resource.js",
-    description: "Generate full resource stack (module + model + migration)"
-  },
-  "make:model": {
-    script: "make-model.js",
-    description: "Generate a new Sequelize model"
-  },
-  "make:controller": {
-    script: "make-controller.js",
-    description: "Generate a new controller file"
-  },
-  "make:service": {
-    script: "make-service.js",
-    description: "Generate a new service file"
-  },
-  "make:middleware": {
-    script: "make-middleware.js",
-    description: "Generate a new middleware file"
-  },
-  "make:migration": {
-    script: "make-migration.js",
-    description: "Generate an empty database migration"
-  },
-  "model:migration": {
-    script: "generate-model-migration.js",
-    description: "Generate migration from an existing model"
-  },
-  "make:notification": {
-    script: "make-notification.js",
-    description: "Generate a new HTML email notification service"
-  },
-  "make:email": {
-    script: "make-notification.js",
-    description: "Generate a new HTML email notification service"
-  },
-  "make:cron": {
-    script: "make-cron.js",
-    description: "Generate a new cron schedule job"
-  },
-  "make:schedule": {
-    script: "make-cron.js",
-    description: "Generate a new cron schedule job"
-  },
-  "make:job": {
-    script: "make-cron.js",
-    description: "Generate a new cron schedule job"
-  },
-  "make:jobs": {
-    script: "make-cron.js",
-    description: "Initialize jobs directory & scheduler registry"
-  },
-  "make:seeder": {
-    script: "make-seeder.js",
-    description: "Generate a new database seeder"
-  },
-  "make:seed": {
-    script: "make-seeder.js",
-    description: "Generate a new database seeder"
-  },
-  "make:test": {
-    script: "make-test.js",
-    description: "Generate a new test suite file"
-  },
-  "make:event": {
-    script: "make-event.js",
-    description: "Generate a new event emitter & listener"
-  },
-  "make:listener": {
-    script: "make-event.js",
-    description: "Generate a new event emitter & listener"
-  },
-  "make:events": {
-    script: "make-event.js",
-    description: "Initialize events directory & event emitter registry"
-  },
-  "make:relation": {
-    script: "make-relation.js",
-    description: "Scaffold association between Sequelize models"
-  },
-  "make:association": {
-    script: "make-relation.js",
-    description: "Scaffold association between Sequelize models"
-  },
-  "make:logs": {
-    script: "make-logs.js",
-    description: "Initialize logs directory"
-  },
-  "logs": {
-    script: "make-logs.js",
-    description: "Initialize logs directory"
-  },
-  "route:list": {
-    script: "route-list.js",
-    description: "Display formatted table of all registered API endpoints"
-  },
-  "routes": {
-    script: "route-list.js",
-    description: "Display formatted table of all registered API endpoints"
-  },
-  "doctor": {
-    script: "cli-doctor.js",
-    description: "Run system health check & diagnostics"
-  },
-  "cli:doctor": {
-    script: "cli-doctor.js",
-    description: "Run system health check & diagnostics"
-  },
-  "db:sync": {
-    target: path.join(process.cwd(), "src/database/sync.js"),
-    description: "Sync Sequelize database tables"
-  },
-  "test:flow": {
-    script: "test-api-flow.js",
-    description: "Run API flow test suite"
-  }
-};
-
-function printHelp() {
-  console.log("\\n🛠️  Node Simple Scaffold CLI Tool\\n");
-  console.log("Usage: node scripts/cli.js [command] [options/arguments]\\n");
-  console.log("Available Commands:");
-  console.log("═════════════════════════════════════════════════════════════════════════");
-  for (const [name, info] of Object.entries(commands)) {
-    console.log(\`  \${name.padEnd(20)} \${info.description}\`);
-  }
-  console.log("═════════════════════════════════════════════════════════════════════════\\n");
-  console.log("Examples:");
-  console.log("  node scripts/cli.js make:resource Product");
-  console.log("  node scripts/cli.js make:module Payment");
-  console.log("  node scripts/cli.js route:list");
-  console.log("  node scripts/cli.js doctor\\n");
-}
-
-if (!command) {
-  const menuScript = path.join(__dirname, "interactive-menu.js");
-  if (require("fs").existsSync(menuScript)) {
-    const child = fork(menuScript, [], { stdio: "inherit" });
-    child.on("exit", (code) => process.exit(code || 0));
-    return;
-  }
-  printHelp();
-  process.exit(0);
-}
-
-if (command === "--help" || command === "-h" || command === "help") {
-  printHelp();
-  process.exit(0);
-}
-
-const targetCmd = commands[command];
-if (!targetCmd) {
-  console.error(\`\\n❌ Unknown command: "\${command}"\\n\`);
-  printHelp();
-  process.exit(1);
-}
-
-const scriptPath = targetCmd.target || path.join(__dirname, targetCmd.script);
-
-if (!require("fs").existsSync(scriptPath)) {
-  console.error(\`\\n❌ Target script not found: "\${scriptPath}"\\n\`);
-  process.exit(1);
-}
-
-const child = fork(scriptPath, extraArgs, { stdio: "inherit" });
-
-child.on("exit", (code) => {
-  process.exit(code || 0);
-});
-`
-);
-
-// Copy generator scripts to target project's scripts folder
-const packageScriptsDir = __dirname;
-const targetScriptsDir = path.join(projectRoot, "scripts");
-createDirectory(targetScriptsDir);
-
-if (fs.existsSync(packageScriptsDir)) {
-  const scriptFiles = fs.readdirSync(packageScriptsDir);
-  scriptFiles.forEach((file) => {
-    if (file.endsWith(".js") && file !== "create-structure.js" && file !== "cli.js") {
-      const srcFile = path.join(packageScriptsDir, file);
-      const destFile = path.join(targetScriptsDir, file);
-      if (!fs.existsSync(destFile) || forceOverwrite) {
-        fs.copyFileSync(srcFile, destFile);
-        console.log(`📄 Copied script: scripts/${file}`);
-        stats.created++;
-      }
-    }
-  });
-}
-
-createFile(
-  "scripts/README.md",
-  `# Backend CLI Code Generator & Utility Scripts
-
-This directory contains custom CLI generator scripts designed to streamline project structure generation, module scaffolding, resource creation, database synchronization, database migrations, and automated verification for the Backend backend platform.
-
----
-
-## 🛠️ Unified Master CLI Runner (\`scripts/cli.js\`)
-
-All generators and utility scripts can be run through the central master CLI script \`scripts/cli.js\` or via NPM script aliases in \`package.json\`.
-
-\`\`\`bash
-# Display CLI Interactive Help Dashboard
-node scripts/cli.js help
-# or
-npm run cli
-\`\`\`
-
-### Quick Command Reference
-
-| Command | Master CLI Command | NPM Script Alias | Description |
-|---|---|---|---|
-| Master CLI | \`node scripts/cli.js\` | \`npm run cli\` | Master CLI dispatcher & help menu |
-| Project Structure | \`node scripts/cli.js structure\` | \`npm run structure\` | Generate lightweight backend project structure |
-| Auth Module | \`node scripts/cli.js make:auth\` | \`npm run make:auth\` | Scaffolds authentication module (\`register\`, \`login\`, profile, avatar, JWT) |
-| Resource Stack | \`node scripts/cli.js make:resource <Name>\` | \`npm run make:resource -- <Name>\` | Scaffolds model + migration + full API module |
-| Feature Module | \`node scripts/cli.js make:module <Name>\` | \`npm run make:module -- <Name>\` | Scaffolds layered module folder (\`controller\`, \`service\`, \`repository\`, \`routes\`, \`validation\`) |
-| Model | \`node scripts/cli.js make:model <Name>\` | \`npm run make:model -- <Name>\` | Generates a new Sequelize model |
-| Controller | \`node scripts/cli.js make:controller <Name>\` | \`npm run make:controller -- <Name>\` | Generates a new controller file |
-| Service | \`node scripts/cli.js make:service <Name>\` | \`npm run make:service -- <Name>\` | Generates a new service file |
-| Middleware | \`node scripts/cli.js make:middleware <Name>\` | \`npm run make:middleware -- <Name>\` | Generates a new middleware file |
-| Blank Migration | \`node scripts/cli.js make:migration <Name>\` | \`npm run make:migration -- <Name>\` | Generates a timestamped empty migration file |
-| Model Migration | \`node scripts/cli.js model:migration <Name>\` | \`npm run model:migration -- <Name>\` | Generates migration schema based on a model |
-| Email Notification | \`node scripts/cli.js make:notification <Name>\` | \`npm run make:notification -- <Name>\` | Generates HTML email notification service & mail config |
-| Cron Schedule Job | \`node scripts/cli.js make:cron <Name> [Expression]\` | \`npm run make:cron -- <Name> "[Expression]"\` | Generates a new cron schedule job & updates registry |
-| Init Jobs Folder | \`node scripts/cli.js make:jobs\` | \`npm run make:jobs\` | Initializes \`src/jobs\` directory and cron registry |
-| Database Seeder | \`node scripts/cli.js make:seeder <Name>\` | \`npm run make:seeder -- <Name>\` | Generates a timestamped database seeder |
-| Test Suite | \`node scripts/cli.js make:test <Name>\` | \`npm run make:test -- <Name>\` | Generates a new test suite file under \`tests/\` |
-| Event Handler | \`node scripts/cli.js make:event <Name>\` | \`npm run make:event -- <Name>\` | Generates a new event emitter & listener |
-| Init Events Folder | \`node scripts/cli.js make:events\` | \`npm run make:events\` | Initializes \`src/events\` directory and event registry |
-| Init Logs Folder | \`node scripts/cli.js make:logs\` | \`npm run make:logs\` | Initializes \`logs/\` directory with \`.gitkeep\` |
-| Interactive Studio | \`node scripts/cli.js\` | \`npm run cli\` | Master interactive CLI menu prompt |
-| Model Relation | \`node scripts/cli.js make:relation <Source> <Target> [Type]\` | \`npm run make:relation -- <Source> <Target> [Type]\` | Scaffolds Sequelize model association (\`hasMany\`, \`belongsTo\`, etc.) |
-| Route Visualizer | \`node scripts/cli.js route:list\` | \`npm run route:list\` | Displays formatted ASCII table of all registered API endpoints |
-| System Doctor | \`node scripts/cli.js doctor\` | \`npm run doctor\` | Performs diagnostic health check on env, DB, and packages |
-| Database Sync | \`node scripts/cli.js db:sync\` | \`npm run db:sync\` | Syncs Sequelize models with database tables |
-| Flow Test | \`node scripts/cli.js test:flow\` | \`node scripts/test-api-flow.js\` | Runs automated verification test suite |
-
----
-
-## 📦 Required NPM Packages
-
-To run the generator scripts, standard application modules, database ORM, and API engine, ensure the following packages are installed:
-
-### Application & Runtime Dependencies
-\`\`\`bash
-npm install express sequelize mysql2 dotenv cors helmet compression joi jsonwebtoken bcryptjs multer morgan winston winston-daily-rotate-file swagger-ui-express swagger-jsdoc
-\`\`\`
-
-### Development & CLI Dependencies
-\`\`\`bash
-npm install --save-dev nodemon cross-env sequelize-cli
-\`\`\`
-
-### Dependency Breakdown:
-| Package | Category | Purpose in Platform & Scaffolding |
-|---|---|---|
-| \`express\` | Core Framework | Web server framework used by generated controllers & routes |
-| \`sequelize\` | ORM | Database model definition used by \`make:model\` & \`make:resource\` |
-| \`mysql2\` | Database Driver | MySQL driver for Sequelize connection |
-| \`joi\` | Validation | Data schema validation used in generated \`<module>.validation.js\` |
-| \`jsonwebtoken\` | Authentication | Bearer JWT generation & verification |
-| \`bcryptjs\` | Security | Password hashing utility |
-| \`multer\` | Uploads | File & image upload handling middleware |
-| \`cors\` & \`helmet\` | Security | Security headers and CORS policy configuration |
-| \`compression\` | Performance | Response body compression |
-| \`swagger-ui-express\` & \`swagger-jsdoc\` | Documentation | OpenAPI 3.0 interactive Swagger UI docs |
-| \`winston\` & \`winston-daily-rotate-file\` | Logging | System error & access logger |
-| \`sequelize-cli\` | Dev Tooling | Migration & seeder runner CLI |
-| \`nodemon\` & \`cross-env\` | Dev Tooling | Hot-reloading development server environment |
-
----
-
-## 🚀 Script Usage Guide
-
-### 1. Project Structure Generation (\`create-structure.js\` / \`structure\`)
-Generates complete backend architecture including directories, models, controllers, services, middleware, utilities, configuration, Swagger docs, and updates \`package.json\`.
-
-\`\`\`bash
-# Standard run
-node scripts/cli.js structure
-
-# Options:
-# --force / -f         : Overwrite existing files
-# --skip-install / -s  : Skip running npm install
-node scripts/cli.js structure --force --skip-install
-\`\`\`
-
----
-
-### 2. Generate a Complete Resource (\`make:resource\`)
-Scaffolds a complete feature stack: Model, Database Migration, and full API Module (\`controller\`, \`service\`, \`repository\`, \`routes\`, \`validation\`).
-
-\`\`\`bash
-node scripts/cli.js make:resource RepairRequest
-# or
-npm run make:resource -- RepairRequest
-\`\`\`
-
-**Generates:**
-\`\`\`
-src/
-├── models/
-│   └── RepairRequest.js
-├── database/
-│   └── migrations/
-│       └── TIMESTAMP-create-repair-requests.js
-└── modules/
-    └── repair-requests/
-        ├── repair-request.controller.js
-        ├── repair-request.service.js
-        ├── repair-request.repository.js
-        ├── repair-request.routes.js
-        └── repair-request.validation.js
-\`\`\`
-
----
-
-### 3. Generate a Standalone Module (\`make:module\`)
-Creates a standard layered feature directory under \`src/modules/\` without generating models or migrations.
-
-\`\`\`bash
-node scripts/cli.js make:module payments
-# or
-npm run make:module -- payments
-\`\`\`
-
-**Generates:**
-\`\`\`
-src/modules/payments/
-├── payment.controller.js
-├── payment.service.js
-├── payment.repository.js
-├── payment.routes.js
-└── payment.validation.js
-\`\`\`
-
----
-
-### 4. System Test & Verification Runner (\`test-api-flow.js\`)
-Executes an automated test suite verifying database model registrations, foreign key associations, Express routing, and status constants.
-
-\`\`\`bash
-node scripts/cli.js test:flow
-\`\`\`
-
----
-
-## 📝 Naming Conventions & Rules
-
-- **PascalCase** or **kebab-case** supported for arguments:
-  - \`node scripts/cli.js make:resource PartListing\`
-  - \`node scripts/cli.js make:resource part-listing\`
-- **Output naming standard**:
-  - Model: \`src/models/PartListing.js\`
-  - Module directory: \`src/modules/part-listings/\`
-  - File prefix: \`part-listing.controller.js\`, \`part-listing.service.js\`, etc.
-- **Safety**: By default, generator scripts will **never overwrite** existing files (unless \`--force\` is explicitly provided to \`structure\`).
 `
 );
 
@@ -1402,14 +1019,14 @@ const updatePackageScripts = () => {
     ...(pkg.scripts || {}),
     "dev": "cross-env NODE_ENV=development nodemon src/index.js",
     "start": "cross-env NODE_ENV=production node src/index.js",
-    "db:seed:all": "sequelize-cli db:seed:all",
-    "db:seed": "sequelize-cli db:seed --seed",
+    "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo:all": "sequelize-cli db:migrate:undo:all",
-    "db:migrate": "sequelize-cli db:migrate"
+    "db:seed:all": "sequelize-cli db:seed:all",
+    "db:seed": "sequelize-cli db:seed --seed"
   };
 
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-  console.log("📄 Updated: package.json (scripts mapped to scripts/cli.js)");
+  console.log("📄 Updated: package.json (dev, start, db scripts)");
 };
 
 updatePackageScripts();
@@ -1427,7 +1044,7 @@ if (skipInstall) {
 
   try {
     execSync(
-      `npm install express sequelize mysql2 dotenv cors helmet compression joi jsonwebtoken bcryptjs multer morgan winston winston-daily-rotate-file swagger-ui-express swagger-jsdoc nodemailer node-cron`,
+      `npm install express sequelize mysql2 dotenv cors helmet compression joi morgan winston winston-daily-rotate-file swagger-ui-express swagger-jsdoc`,
       { stdio: "inherit", shell: true }
     );
     console.log("\n✅ Dependencies installed successfully!\n");
@@ -1459,5 +1076,10 @@ console.log(`📊 Summary: ${stats.created} created | ${stats.overwritten} overw
 console.log("Next steps:");
 console.log("1. Configure .env");
 console.log("2. Ensure MySQL database exists");
-console.log("3. (Optional) Run: npm run make:auth (to scaffold authentication)");
-console.log("4. Run: npm run dev\n");
+console.log("3. Run: npm run dev\n");
+console.log("CLI Code Generator (NPX):");
+console.log("  npx scaffold make:auth         - Scaffold authentication module");
+console.log("  npx scaffold make:resource <M> - Scaffold full resource (model + migration + module)");
+console.log("  npx scaffold make:module <M>   - Scaffold layered module");
+console.log("  npx scaffold route:list        - View all registered routes");
+console.log("  npx scaffold doctor            - System health check & diagnostics\n");
