@@ -14,7 +14,7 @@
     "email": "krishnapawar90906@gmail.com",
     "url": "https://github.com/krishnapawar"
   },
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/krishnapawar/node-simple-scaffold.git"
@@ -60,7 +60,8 @@
     "bin",
     "scripts",
     "README.md",
-    "package.json"
+    "package.json",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=16.0.0"

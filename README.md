@@ -176,9 +176,7 @@ my-api/
 │   │       └── user.validation.js
 │   ├── routes/             # Central route dispatcher
 │   ├── utils/              # Helper functions, logger, response handlers
-│   ├── constants/          # Status codes, roles
 │   └── app.js              # Express app entry point
-├── uploads/                # Static uploaded files (.gitkeep)
 ├── tests/                  # Automated integration & unit tests
 ├── .env.example            # Environment variable template
 ├── package.json
@@ -189,13 +187,15 @@ my-api/
 
 | Folder | Generator Command | Description |
 |---|---|---|
-| `src/modules/auth/` | `npx node-simple-scaffold make:auth` | Authentication system (`register`, `login`, profile, avatar, JWT) |
-| `src/jobs/` | `npx node-simple-scaffold make:cron <Name>` / `make:jobs` | Cron jobs & scheduler registry |
-| `src/events/` | `npx node-simple-scaffold make:event <Name>` / `make:events` | Event emitters & listener handlers |
-| `logs/` | `npx node-simple-scaffold make:logs` | Daily rotated log storage |
+| `src/modules/auth/` | `npx scaffold make:auth` | Authentication system (`register`, `login`, profile, avatar, JWT) |
+| `src/jobs/` | `npx scaffold make:cron <Name>` / `make:jobs` | Cron jobs & scheduler registry |
+| `src/events/` | `npx scaffold make:event <Name>` / `make:events` | Event emitters & listener handlers |
+| `logs/` | `npx scaffold make:logs` | Daily rotated log storage |
+| `uploads/` | `npx scaffold make:uploads` | Uploaded static files directory & Multer middleware |
+| `src/constants/` | `npx scaffold make:constants` | Central application constants (`roles.js`, `statusCodes.js`) |
 
 ---
 
 ## 📄 License
 
-ISC License - Feel free to use in personal & commercial projects!
+MIT License. See [LICENSE](file:///d:/npmPackageTestNodejs/node-simple-scaffold/LICENSE) for full details. Free for personal and commercial use!
