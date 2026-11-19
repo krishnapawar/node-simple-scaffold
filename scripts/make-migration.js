@@ -10,6 +10,7 @@ if (!name) {
 
 try {
   execSync(`npx sequelize-cli migration:generate --name ${name}`, {
+    cwd: process.cwd(),
     stdio: "inherit",
     shell: true,
   });

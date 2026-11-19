@@ -509,6 +509,84 @@ const User = sequelize.define(
 module.exports = User;
 `
     );
+
+    const migrationsDir = path.join(projectRoot, 'src', 'database', 'migrations');
+    if (fs.existsSync(migrationsDir)) {
+      const existing = fs.readdirSync(migrationsDir);
+      if (!existing.some((f) => f.includes('create-users'))) {
+        const now = new Date();
+        const pad = (v) => String(v).padStart(2, '0');
+        const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        createFile(
+          `src/database/migrations/${timestamp}-create-users.js`,
+          `'use strict';
+
+/** @type {import('sequelize-cli').Migration} */
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.createTable('users', {
+      id: {
+        type: Sequelize.BIGINT.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true
+      },
+      name: {
+        type: Sequelize.STRING(150),
+        allowNull: false
+      },
+      email: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+        unique: true
+      },
+      password: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      avatar: {
+        type: Sequelize.STRING(255),
+        allowNull: true,
+        defaultValue: null
+      },
+      phone: {
+        type: Sequelize.STRING(20),
+        allowNull: true
+      },
+      bio: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      role: {
+        type: Sequelize.ENUM('admin', 'user'),
+        allowNull: false,
+        defaultValue: 'user'
+      },
+      status: {
+        type: Sequelize.ENUM('active', 'inactive'),
+        allowNull: false,
+        defaultValue: 'active'
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
+      }
+    });
+  },
+
+  async down(queryInterface) {
+    await queryInterface.dropTable('users');
+  }
+};
+`
+        );
+      }
+    }
   }
 }
 
